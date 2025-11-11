@@ -1,15 +1,15 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from tests.mocks.cache_service import MockCacheService
 
 from app.db.session import get_session
 from app.db.unit_of_work import SqlAlchemyUnitOfWork
 from app.domain.entities import BookEntity
-from app.domain.value_objects import PaginationParams, PaginationMeta, PaginatedResult
+from app.domain.value_objects import PaginatedResult, PaginationMeta
 from app.main import app
 from app.repositories.book_repository import BookRepository
 from app.services.book_service import BookService
+from tests.mocks.cache_service import MockCacheService
 
 
 @pytest.mark.asyncio
@@ -24,7 +24,7 @@ async def test_list_books_cache_hit(test_author_id):
         fake_cache = MagicMock()
         fake_cache.connect = AsyncMock(return_value=None)
         fake_cache.close = AsyncMock(return_value=None)
-        
+
         # Create a cached PaginatedResult
         cached_book = BookEntity(
             id=999,

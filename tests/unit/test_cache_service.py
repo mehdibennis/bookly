@@ -2,8 +2,9 @@
 Comprehensive tests for Redis cache service.
 Tests all cache operations with mock Redis.
 """
+
 from datetime import date, datetime
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -27,7 +28,7 @@ def mock_redis():
 @pytest.fixture
 def cache_service(mock_redis):
     """Create a cache service with mocked Redis."""
-    with patch('redis.asyncio.from_url', return_value=mock_redis):
+    with patch("redis.asyncio.from_url", return_value=mock_redis):
         service = RedisCacheService(redis_url="redis://localhost:6379", ttl=3600)
         service._redis = mock_redis  # Set directly to avoid async connect
         return service
@@ -39,10 +40,10 @@ class TestRedisCacheServiceConnection:
     @pytest.mark.asyncio
     async def test_connect_success(self, mock_redis):
         """Test successful Redis connection."""
-        with patch('redis.asyncio.from_url', return_value=mock_redis):
+        with patch("redis.asyncio.from_url", return_value=mock_redis):
             service = RedisCacheService(redis_url="redis://localhost:6379")
             await service.connect()
-            
+
             assert service._redis is not None
             mock_redis.ping.assert_awaited_once()
 
@@ -51,23 +52,23 @@ class TestRedisCacheServiceConnection:
         """Test Redis connection failure."""
         mock_redis = AsyncMock()
         mock_redis.ping = AsyncMock(side_effect=Exception("Connection failed"))
-        
-        with patch('redis.asyncio.from_url', return_value=mock_redis):
+
+        with patch("redis.asyncio.from_url", return_value=mock_redis):
             service = RedisCacheService(redis_url="redis://localhost:6379")
-            
+
             with pytest.raises(Exception, match="Connection failed"):
                 await service.connect()
-            
+
             assert service._redis is None
 
     @pytest.mark.asyncio
     async def test_connect_only_once(self, mock_redis):
         """Test that connect doesn't create multiple connections."""
-        with patch('redis.asyncio.from_url', return_value=mock_redis):
+        with patch("redis.asyncio.from_url", return_value=mock_redis):
             service = RedisCacheService(redis_url="redis://localhost:6379")
             await service.connect()
             await service.connect()  # Second call
-            
+
             # from_url should be called only once
             mock_redis.ping.assert_awaited_once()
 
@@ -86,9 +87,9 @@ class TestRedisCacheServiceBooks:
     async def test_get_books_page_cache_miss(self, cache_service, mock_redis):
         """Test getting books page with cache miss."""
         mock_redis.get.return_value = None
-        
+
         result = await cache_service.get_books_page(1, 10)
-        
+
         assert result is None
         mock_redis.get.assert_awaited_once_with("books:page:1:size:10")
 
@@ -96,7 +97,7 @@ class TestRedisCacheServiceBooks:
     async def test_get_books_page_cache_hit(self, cache_service, mock_redis):
         """Test getting books page with cache hit."""
         import json
-        
+
         cached_data = {
             "data": [
                 {
@@ -112,12 +113,12 @@ class TestRedisCacheServiceBooks:
                 "page": 1,
                 "size": 10,
                 "count": 1,
-            }
+            },
         }
         mock_redis.get.return_value = json.dumps(cached_data)
-        
+
         result = await cache_service.get_books_page(1, 10)
-        
+
         assert result is not None
         assert len(result.data) == 1
         assert result.data[0].id == 1
@@ -129,20 +130,20 @@ class TestRedisCacheServiceBooks:
     async def test_get_books_page_json_error(self, cache_service, mock_redis):
         """Test getting books page with JSON decode error."""
         mock_redis.get.return_value = "invalid json"
-        
+
         result = await cache_service.get_books_page(1, 10)
-        
+
         assert result is None
 
     @pytest.mark.asyncio
     async def test_set_books_page_not_connected(self):
         """Test setting books page when not connected."""
         service = RedisCacheService(redis_url="redis://localhost:6379")
-        
+
         books = [BookEntity(id=1, title="Test", authors=[1])]
         meta = PaginationMeta(total=1, page=1, size=10, count=1)
         result = PaginatedResult(data=books, meta=meta)
-        
+
         # Should not raise error
         await service.set_books_page(1, 10, result)
 
@@ -160,9 +161,9 @@ class TestRedisCacheServiceBooks:
         ]
         meta = PaginationMeta(total=10, page=1, size=10, count=1)
         result = PaginatedResult(data=books, meta=meta)
-        
+
         await cache_service.set_books_page(1, 10, result)
-        
+
         mock_redis.setex.assert_awaited_once()
         call_args = mock_redis.setex.call_args
         assert call_args[0][0] == "books:page:1:size:10"
@@ -172,11 +173,11 @@ class TestRedisCacheServiceBooks:
     async def test_set_books_page_redis_error(self, cache_service, mock_redis):
         """Test setting books page with Redis error."""
         mock_redis.setex.side_effect = Exception("Redis error")
-        
+
         books = [BookEntity(id=1, title="Test", authors=[1])]
         meta = PaginationMeta(total=1, page=1, size=10, count=1)
         result = PaginatedResult(data=books, meta=meta)
-        
+
         # Should not raise error (logged as warning)
         await cache_service.set_books_page(1, 10, result)
 
@@ -184,7 +185,7 @@ class TestRedisCacheServiceBooks:
     async def test_invalidate_books_cache_not_connected(self):
         """Test invalidating books cache when not connected."""
         service = RedisCacheService(redis_url="redis://localhost:6379")
-        
+
         # Should not raise error
         await service.invalidate_books_cache()
 
@@ -192,9 +193,9 @@ class TestRedisCacheServiceBooks:
     async def test_invalidate_books_cache_no_keys(self, cache_service, mock_redis):
         """Test invalidating books cache with no keys."""
         mock_redis.keys.return_value = []
-        
+
         await cache_service.invalidate_books_cache()
-        
+
         mock_redis.keys.assert_awaited_once_with("books:page:*")
         mock_redis.delete.assert_not_awaited()
 
@@ -206,9 +207,9 @@ class TestRedisCacheServiceBooks:
             "books:page:2:size:10",
             "books:page:3:size:10",
         ]
-        
+
         await cache_service.invalidate_books_cache()
-        
+
         mock_redis.delete.assert_awaited_once()
         call_args = mock_redis.delete.call_args[0]
         assert len(call_args) == 3
@@ -217,7 +218,7 @@ class TestRedisCacheServiceBooks:
     async def test_invalidate_books_cache_redis_error(self, cache_service, mock_redis):
         """Test invalidating books cache with Redis error."""
         mock_redis.keys.side_effect = Exception("Redis error")
-        
+
         # Should not raise error (logged as warning)
         await cache_service.invalidate_books_cache()
 
@@ -236,9 +237,9 @@ class TestRedisCacheServiceAuthors:
     async def test_get_authors_page_cache_miss(self, cache_service, mock_redis):
         """Test getting authors page with cache miss."""
         mock_redis.get.return_value = None
-        
+
         result = await cache_service.get_authors_page(1, 10)
-        
+
         assert result is None
         mock_redis.get.assert_awaited_with("authors:page:1:size:10")
 
@@ -246,7 +247,7 @@ class TestRedisCacheServiceAuthors:
     async def test_get_authors_page_cache_hit(self, cache_service, mock_redis):
         """Test getting authors page with cache hit."""
         import json
-        
+
         cached_data = {
             "data": [
                 {
@@ -267,12 +268,12 @@ class TestRedisCacheServiceAuthors:
                 "page": 1,
                 "size": 10,
                 "count": 1,
-            }
+            },
         }
         mock_redis.get.return_value = json.dumps(cached_data)
-        
+
         result = await cache_service.get_authors_page(1, 10)
-        
+
         assert result is not None
         assert len(result.data) == 1
         assert result.data[0].id == 1
@@ -284,7 +285,7 @@ class TestRedisCacheServiceAuthors:
     async def test_get_authors_page_with_null_dates(self, cache_service, mock_redis):
         """Test getting authors page with null dates."""
         import json
-        
+
         cached_data = {
             "data": [
                 {
@@ -300,12 +301,12 @@ class TestRedisCacheServiceAuthors:
                     "updated_at": None,
                 }
             ],
-            "meta": {"total": 1, "page": 1, "size": 10, "count": 1}
+            "meta": {"total": 1, "page": 1, "size": 10, "count": 1},
         }
         mock_redis.get.return_value = json.dumps(cached_data)
-        
+
         result = await cache_service.get_authors_page(1, 10)
-        
+
         assert result is not None
         assert result.data[0].birth_date is None
         assert result.data[0].death_date is None
@@ -315,11 +316,11 @@ class TestRedisCacheServiceAuthors:
     async def test_set_authors_page_not_connected(self):
         """Test setting authors page when not connected."""
         service = RedisCacheService(redis_url="redis://localhost:6379")
-        
+
         authors = [AuthorEntity(id=1, first_name="John", last_name="Doe")]
         meta = PaginationMeta(total=1, page=1, size=10, count=1)
         result = PaginatedResult(data=authors, meta=meta)
-        
+
         # Should not raise error
         await service.set_authors_page(1, 10, result)
 
@@ -342,9 +343,9 @@ class TestRedisCacheServiceAuthors:
         ]
         meta = PaginationMeta(total=10, page=2, size=5, count=1)
         result = PaginatedResult(data=authors, meta=meta)
-        
+
         await cache_service.set_authors_page(2, 5, result)
-        
+
         mock_redis.setex.assert_awaited_once()
         call_args = mock_redis.setex.call_args
         assert call_args[0][0] == "authors:page:2:size:5"
@@ -357,9 +358,9 @@ class TestRedisCacheServiceAuthors:
             "authors:page:1:size:10",
             "authors:page:2:size:10",
         ]
-        
+
         await cache_service.invalidate_authors_cache()
-        
+
         mock_redis.delete.assert_awaited_once()
         call_args = mock_redis.delete.call_args[0]
         assert len(call_args) == 2
@@ -371,7 +372,7 @@ class TestCacheServiceHelpers:
     def test_book_entity_to_dict(self):
         """Test converting BookEntity to dictionary."""
         service = RedisCacheService(redis_url="redis://localhost:6379")
-        
+
         book = BookEntity(
             id=1,
             title="Test Book",
@@ -379,9 +380,9 @@ class TestCacheServiceHelpers:
             authors_details=[{"id": 1, "name": "Author 1"}],
             authors_number=2,
         )
-        
+
         result = service._book_entity_to_dict(book)
-        
+
         assert result["id"] == 1
         assert result["title"] == "Test Book"
         assert result["authors"] == [1, 2]
@@ -390,7 +391,7 @@ class TestCacheServiceHelpers:
     def test_dict_to_book_entity(self):
         """Test converting dictionary to BookEntity."""
         service = RedisCacheService(redis_url="redis://localhost:6379")
-        
+
         data = {
             "id": 1,
             "title": "Test Book",
@@ -398,9 +399,9 @@ class TestCacheServiceHelpers:
             "authors_details": [{"id": 1, "name": "Author 1"}],
             "authors_number": 2,
         }
-        
+
         result = service._dict_to_book_entity(data)
-        
+
         assert result.id == 1
         assert result.title == "Test Book"
         assert result.authors == [1, 2]
@@ -408,7 +409,7 @@ class TestCacheServiceHelpers:
     def test_author_entity_to_dict_with_all_fields(self):
         """Test converting AuthorEntity to dictionary with all fields."""
         service = RedisCacheService(redis_url="redis://localhost:6379")
-        
+
         author = AuthorEntity(
             id=1,
             first_name="John",
@@ -421,9 +422,9 @@ class TestCacheServiceHelpers:
             created_at=datetime(2023, 1, 1, 12, 0, 0),
             updated_at=datetime(2023, 1, 2, 12, 0, 0),
         )
-        
+
         result = service._author_entity_to_dict(author)
-        
+
         assert result["id"] == 1
         assert result["first_name"] == "John"
         assert result["birth_date"] == "1950-01-01"
@@ -433,7 +434,7 @@ class TestCacheServiceHelpers:
     def test_author_entity_to_dict_with_null_fields(self):
         """Test converting AuthorEntity to dictionary with null fields."""
         service = RedisCacheService(redis_url="redis://localhost:6379")
-        
+
         author = AuthorEntity(
             id=1,
             first_name="Jane",
@@ -446,9 +447,9 @@ class TestCacheServiceHelpers:
             created_at=None,
             updated_at=None,
         )
-        
+
         result = service._author_entity_to_dict(author)
-        
+
         assert result["birth_date"] is None
         assert result["death_date"] is None
         assert result["created_at"] is None
@@ -457,7 +458,7 @@ class TestCacheServiceHelpers:
     def test_dict_to_author_entity(self):
         """Test converting dictionary to AuthorEntity."""
         service = RedisCacheService(redis_url="redis://localhost:6379")
-        
+
         data = {
             "id": 1,
             "first_name": "John",
@@ -470,9 +471,9 @@ class TestCacheServiceHelpers:
             "created_at": "2023-01-01T12:00:00",
             "updated_at": "2023-01-02T12:00:00",
         }
-        
+
         result = service._dict_to_author_entity(data)
-        
+
         assert result.id == 1
         assert result.first_name == "John"
         assert result.birth_date == date(1950, 1, 1)
@@ -491,12 +492,12 @@ class TestRedisCacheServiceErrorHandling:
         service = RedisCacheService(redis_url="redis://localhost:6379")
         mock_redis = AsyncMock()
         service._redis = mock_redis
-        
+
         # Make Redis.get() raise an exception
         mock_redis.get.side_effect = Exception("Redis connection error")
-        
+
         result = await service.get_authors_page(1, 10)
-        
+
         # Should return None instead of crashing
         assert result is None
 
@@ -506,15 +507,15 @@ class TestRedisCacheServiceErrorHandling:
         service = RedisCacheService(redis_url="redis://localhost:6379")
         mock_redis = AsyncMock()
         service._redis = mock_redis
-        
+
         # Make Redis.setex() raise an exception
         mock_redis.setex.side_effect = Exception("Redis connection error")
-        
+
         result = PaginatedResult(
             data=[],
             meta=PaginationMeta(total=0, page=1, size=10, count=0),
         )
-        
+
         # Should not crash
         await service.set_authors_page(1, 10, result)
         # No assertion needed - just verifying it doesn't crash
@@ -525,10 +526,10 @@ class TestRedisCacheServiceErrorHandling:
         service = RedisCacheService(redis_url="redis://localhost:6379")
         mock_redis = AsyncMock()
         service._redis = mock_redis
-        
+
         # Make Redis.keys() raise an exception
         mock_redis.keys.side_effect = Exception("Redis connection error")
-        
+
         # Should not crash
         await service.invalidate_authors_cache()
         # No assertion needed - just verifying it doesn't crash
@@ -539,12 +540,12 @@ class TestRedisCacheServiceErrorHandling:
         service = RedisCacheService(redis_url="redis://localhost:6379")
         mock_redis = AsyncMock()
         service._redis = mock_redis
-        
+
         # Make Redis.get() raise an exception
         mock_redis.get.side_effect = Exception("Redis connection error")
-        
+
         result = await service.get_books_page(1, 10)
-        
+
         # Should return None instead of crashing
         assert result is None
 
@@ -554,15 +555,15 @@ class TestRedisCacheServiceErrorHandling:
         service = RedisCacheService(redis_url="redis://localhost:6379")
         mock_redis = AsyncMock()
         service._redis = mock_redis
-        
+
         # Make Redis.setex() raise an exception
         mock_redis.setex.side_effect = Exception("Redis connection error")
-        
+
         result = PaginatedResult(
             data=[],
             meta=PaginationMeta(total=0, page=1, size=10, count=0),
         )
-        
+
         # Should not crash
         await service.set_books_page(1, 10, result)
         # No assertion needed - just verifying it doesn't crash
@@ -573,10 +574,10 @@ class TestRedisCacheServiceErrorHandling:
         service = RedisCacheService(redis_url="redis://localhost:6379")
         mock_redis = AsyncMock()
         service._redis = mock_redis
-        
+
         # Make Redis.keys() raise an exception
         mock_redis.keys.side_effect = Exception("Redis connection error")
-        
+
         # Should not crash
         await service.invalidate_books_cache()
         # No assertion needed - just verifying it doesn't crash

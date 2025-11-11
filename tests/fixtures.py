@@ -2,7 +2,8 @@
 Reusable fixtures for unit tests.
 Provides common mocks for services, repositories, and cache.
 """
-from unittest.mock import AsyncMock, Mock
+
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -21,7 +22,7 @@ def mock_cache():
 def mock_book_repository():
     """Provide a mock book repository with common methods."""
     repo = AsyncMock()
-    
+
     # Default return values
     repo.get_by_id.return_value = None
     repo.get_by_title.return_value = None
@@ -29,11 +30,8 @@ def mock_book_repository():
     repo.update.return_value = BookEntity(id=1, title="Updated Book", authors=[1])
     repo.partial_update.return_value = BookEntity(id=1, title="Patched Book", authors=[1])
     repo.delete.return_value = True
-    repo.get_paginated.return_value = PaginatedResult(
-        data=[],
-        meta=PaginationMeta(total=0, page=1, size=10, count=0)
-    )
-    
+    repo.get_paginated.return_value = PaginatedResult(data=[], meta=PaginationMeta(total=0, page=1, size=10, count=0))
+
     return repo
 
 
@@ -41,7 +39,7 @@ def mock_book_repository():
 def mock_author_repository():
     """Provide a mock author repository with common methods."""
     repo = AsyncMock()
-    
+
     # Default return values
     repo.get_by_id.return_value = None
     repo.get_by_full_name.return_value = None
@@ -49,11 +47,8 @@ def mock_author_repository():
     repo.update.return_value = AuthorEntity(id=1, first_name="Updated", last_name="Doe")
     repo.partial_update.return_value = AuthorEntity(id=1, first_name="Patched", last_name="Doe")
     repo.delete.return_value = True
-    repo.get_paginated.return_value = PaginatedResult(
-        data=[],
-        meta=PaginationMeta(total=0, page=1, size=10, count=0)
-    )
-    
+    repo.get_paginated.return_value = PaginatedResult(data=[], meta=PaginationMeta(total=0, page=1, size=10, count=0))
+
     return repo
 
 
@@ -85,7 +80,7 @@ def sample_book_entity():
 def sample_author_entity():
     """Provide a sample author entity for testing."""
     from datetime import date, datetime
-    
+
     return AuthorEntity(
         id=1,
         first_name="John",

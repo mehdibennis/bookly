@@ -15,9 +15,9 @@ async def test_list_books_invalid_page_value_error():
         repo = BookRepository(session)
         uow = SqlAlchemyUnitOfWork(session)
         cache = MockCacheService()
-        service = BookService(repo, uow, cache)
+        BookService(repo, uow, cache)
         with pytest.raises(ValueError):
-            pagination = PaginationParams(page=0, size=10)
+            PaginationParams(page=0, size=10)
 
 
 @pytest.mark.asyncio
@@ -26,9 +26,9 @@ async def test_list_books_invalid_size_value_error():
         repo = BookRepository(session)
         uow = SqlAlchemyUnitOfWork(session)
         cache = MockCacheService()
-        service = BookService(repo, uow, cache)
+        BookService(repo, uow, cache)
         with pytest.raises(ValueError):
-            pagination = PaginationParams(page=1, size=101)
+            PaginationParams(page=1, size=101)
 
 
 @pytest.mark.asyncio

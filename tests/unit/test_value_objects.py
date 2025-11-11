@@ -2,6 +2,7 @@
 Comprehensive tests for domain value objects.
 Tests all validations, edge cases, and property calculations.
 """
+
 from datetime import date
 
 import pytest
@@ -294,7 +295,7 @@ class TestPaginatedResult:
         meta = PaginationMeta(total=50, page=2, size=10, count=10)
         data = [1, 2, 3, 4, 5]
         result = PaginatedResult(data=data, meta=meta)
-        
+
         assert result.data == data
         assert result.meta == meta
         assert result.meta.page == 2
@@ -304,6 +305,6 @@ class TestPaginatedResult:
         """PaginatedResult should handle empty data list."""
         meta = PaginationMeta(total=0, page=1, size=10, count=0)
         result = PaginatedResult(data=[], meta=meta)
-        
+
         assert result.data == []
         assert result.meta.total == 0

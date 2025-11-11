@@ -203,18 +203,15 @@ Ouvrir une issue sur GitHub avec :
 5. Ouvrir une Pull Request
 
 **Standards:**
-- Coverage ≥ 99%
-- Tests passants (129/129)
+- Coverage ≥ 98%
+- Tests passants (314/314)
 - Black + isort pour formatting
 - Type hints complets
 
-## 📄 Licence
-
-[À définir]
 
 ## 👥 Auteurs
-
-[À compléter]
+**Mehdi Bennis**
+📧 medi.b@hotmail.com
 
 ---
 

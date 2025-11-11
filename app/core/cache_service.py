@@ -3,6 +3,7 @@
 This module provides the concrete implementation of the ICacheService interface
 using Redis as the caching backend.
 """
+
 import json
 import logging
 from typing import Any
@@ -21,7 +22,7 @@ class RedisCacheService(ICacheService):
 
     def __init__(self, redis_url: str, ttl: int = 3600):
         """Initialize Redis cache service.
-        
+
         Args:
             redis_url: Redis connection URL
             ttl: Time to live for cached items in seconds (default: 1 hour)
@@ -52,25 +53,25 @@ class RedisCacheService(ICacheService):
                 _LOGGER.debug("Error while closing Redis connection", exc_info=True)
             finally:
                 self._redis = None
-    # pragma: no cover - best-effort connection close and test coverage for remote Redis
 
+    # pragma: no cover - best-effort connection close and test coverage for remote Redis
 
     async def get_books_page(self, page: int, size: int) -> PaginatedResult[BookEntity] | None:
         """Get cached books page."""
         if not self._redis:
             return None
-            
+
         try:
             key = f"books:page:{page}:size:{size}"
             cached_data = await self._redis.get(key)
             if not cached_data:
                 return None
-                
+
             data = json.loads(cached_data)
             books = [self._dict_to_book_entity(book_dict) for book_dict in data["data"]]
             meta = PaginationMeta(**data["meta"])
             return PaginatedResult(data=books, meta=meta)
-            
+
         except Exception as e:
             _LOGGER.warning(f"Failed to get books from cache: {e}")
             return None
@@ -79,7 +80,7 @@ class RedisCacheService(ICacheService):
         """Cache books page."""
         if not self._redis:
             return
-            
+
         try:
             key = f"books:page:{page}:size:{size}"
             data = {
@@ -89,11 +90,11 @@ class RedisCacheService(ICacheService):
                     "page": result.meta.page,
                     "size": result.meta.size,
                     "count": result.meta.count,
-                }
+                },
             }
             await self._redis.setex(key, self.ttl, json.dumps(data))
             _LOGGER.debug(f"Cached books page {page} with size {size}")
-            
+
         except Exception as e:
             _LOGGER.warning(f"Failed to cache books page: {e}")
 
@@ -101,13 +102,13 @@ class RedisCacheService(ICacheService):
         """Invalidate all books cache."""
         if not self._redis:
             return
-            
+
         try:
             keys = await self._redis.keys("books:page:*")
             if keys:
                 await self._redis.delete(*keys)
                 _LOGGER.debug(f"Invalidated {len(keys)} books cache entries")
-                
+
         except Exception as e:
             _LOGGER.warning(f"Failed to invalidate books cache: {e}")
 
@@ -115,18 +116,18 @@ class RedisCacheService(ICacheService):
         """Get cached authors page."""
         if not self._redis:
             return None
-            
+
         try:
             key = f"authors:page:{page}:size:{size}"
             cached_data = await self._redis.get(key)
             if not cached_data:
                 return None
-                
+
             data = json.loads(cached_data)
             authors = [self._dict_to_author_entity(author_dict) for author_dict in data["data"]]
             meta = PaginationMeta(**data["meta"])
             return PaginatedResult(data=authors, meta=meta)
-            
+
         except Exception as e:
             _LOGGER.warning(f"Failed to get authors from cache: {e}")
             return None
@@ -135,7 +136,7 @@ class RedisCacheService(ICacheService):
         """Cache authors page."""
         if not self._redis:
             return
-            
+
         try:
             key = f"authors:page:{page}:size:{size}"
             # Support either a PaginatedResult or an already-serialized dict
@@ -149,11 +150,11 @@ class RedisCacheService(ICacheService):
                         "page": result.meta.page,
                         "size": result.meta.size,
                         "count": result.meta.count,
-                    }
+                    },
                 }
             await self._redis.setex(key, self.ttl, json.dumps(data))
             _LOGGER.debug(f"Cached authors page {page} with size {size}")
-            
+
         except Exception as e:
             _LOGGER.warning(f"Failed to cache authors page: {e}")
 
@@ -161,13 +162,13 @@ class RedisCacheService(ICacheService):
         """Invalidate all authors cache."""
         if not self._redis:
             return
-            
+
         try:
             keys = await self._redis.keys("authors:page:*")
             if keys:
                 await self._redis.delete(*keys)
                 _LOGGER.debug(f"Invalidated {len(keys)} authors cache entries")
-                
+
         except Exception as e:
             _LOGGER.warning(f"Failed to invalidate authors cache: {e}")
 
@@ -209,7 +210,7 @@ class RedisCacheService(ICacheService):
                         "page": result.meta.page,
                         "size": result.meta.size,
                         "count": result.meta.count,
-                    }
+                    },
                 }
             await self._redis.setex(key, self.ttl, json.dumps(data))
             _LOGGER.debug(f"Cached authors (search) page {page} size {size} for '{search}'")
@@ -253,8 +254,8 @@ class RedisCacheService(ICacheService):
 
     def _dict_to_author_entity(self, data: dict[str, Any]) -> AuthorEntity:
         """Convert dictionary to AuthorEntity."""
-        from datetime import datetime, date
-        
+        from datetime import date, datetime
+
         return AuthorEntity(
             id=data["id"],
             first_name=data["first_name"],

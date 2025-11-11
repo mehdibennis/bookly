@@ -6,13 +6,14 @@ from app.domain.value_objects import (
     AuthorUpdateData,
     BookCreateData,
     BookUpdateData,
-    PaginationParams,
     PaginatedResult,
+    PaginationParams,
 )
 
 
 class ICacheService(Protocol):
     """Interface for caching service."""
+
     async def connect(self) -> None: ...
     async def get_books_page(self, page: int, size: int) -> PaginatedResult[BookEntity] | None: ...
     async def set_books_page(self, page: int, size: int, result: PaginatedResult[BookEntity]) -> None: ...

@@ -7,27 +7,26 @@ import `app.*` modules that are not part of the domain (i.e. imports like
 This prevents accidental leakage of infrastructure or framework code into the
 domain layer and can be run in CI to catch regressions.
 """
+
 from __future__ import annotations
 
 import ast
 from pathlib import Path
-from typing import List, Tuple
-
 
 FORBIDDEN_PREFIX = "app."  # any import starting with app. is suspect
 ALLOWED_DOMAIN_PREFIX = "app.domain"
 
 
-def _find_domain_files() -> List[Path]:
+def _find_domain_files() -> list[Path]:
     root = Path("app") / "domain"
     return [p for p in root.rglob("*.py") if p.is_file()]
 
 
-def _scan_file_for_forbidden_imports(path: Path) -> List[Tuple[int, str]]:
+def _scan_file_for_forbidden_imports(path: Path) -> list[tuple[int, str]]:
     """Return list of (lineno, module) for forbidden imports in the file."""
     src = path.read_text(encoding="utf-8")
     tree = ast.parse(src, filename=str(path))
-    violations: List[Tuple[int, str]] = []
+    violations: list[tuple[int, str]] = []
 
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
@@ -47,7 +46,7 @@ def _scan_file_for_forbidden_imports(path: Path) -> List[Tuple[int, str]]:
 
 def test_domain_layer_has_no_infra_imports() -> None:
     domain_files = _find_domain_files()
-    all_violations: List[Tuple[Path, int, str]] = []
+    all_violations: list[tuple[Path, int, str]] = []
 
     for path in domain_files:
         violations = _scan_file_for_forbidden_imports(path)

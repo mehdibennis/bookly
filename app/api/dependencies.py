@@ -3,6 +3,7 @@
 This module provides dependency injection functions that create properly
 configured service instances with all their dependencies.
 """
+
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,10 +12,10 @@ from app.core.config import settings
 from app.db.session import get_session
 from app.db.unit_of_work import SqlAlchemyUnitOfWork
 from app.domain.repositories import ICacheService
-from app.repositories.book_repository import BookRepository
-from app.services.book_service import BookService
 from app.repositories.author_repository import AuthorRepository
+from app.repositories.book_repository import BookRepository
 from app.services.author_service import AuthorService
+from app.services.book_service import BookService
 
 
 async def get_cache_service() -> ICacheService:
@@ -26,6 +27,7 @@ async def get_cache_service() -> ICacheService:
     import os
 
     if os.getenv("PYTEST_XDIST_WORKER"):
+
         class _NoopCache(ICacheService):
             async def connect(self) -> None:
                 return None

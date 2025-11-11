@@ -3,13 +3,7 @@ from app.core.exceptions import ConflictException, NotFoundException
 from app.domain.entities import BookEntity
 from app.domain.repositories import IBookRepository, ICacheService
 from app.domain.unit_of_work import IUnitOfWork
-from app.domain.value_objects import (
-    BookCreateData,
-    BookUpdateData,
-    PaginatedResult,
-    PaginationMeta,
-    PaginationParams,
-)
+from app.domain.value_objects import BookCreateData, BookUpdateData, PaginatedResult, PaginationParams
 
 
 class BookService:
@@ -79,22 +73,18 @@ class BookService:
             ConflictException: If a book with the same normalized title exists.
         """
         # Create normalized entity for validation
-        book_entity = BookEntity(
-            id=None, 
-            title=book_data.title, 
-            authors=list(book_data.authors)
-        ).normalize()
-        
+        book_entity = BookEntity(id=None, title=book_data.title, authors=list(book_data.authors)).normalize()
+
         existing_book = await self.repo.get_by_title(book_entity.title)
         if existing_book:
             raise ConflictException(f"Un livre avec le titre '{book_data.title}' existe déjà.")
-            
+
         # Create normalized data for repository
         normalized_data = BookCreateData(
             title=book_entity.title,  # Use normalized title
-            authors=book_data.authors
+            authors=book_data.authors,
         )
-            
+
         async with self.uow:
             await self.cache.invalidate_books_cache()
             return await self.repo.create(normalized_data)
@@ -114,7 +104,7 @@ class BookService:
         """
         if book_id <= 0:
             raise ValueError("L'ID du livre doit être un entier positif.")
-            
+
         existing_book = await self.repo.get_by_id(book_id)
         if not existing_book:
             raise NotFoundException(f"Book with id={book_id} not found.")
@@ -130,7 +120,7 @@ class BookService:
         # Create normalized data for repository
         normalized_data = BookUpdateData(
             title=normalized_title,  # Use normalized title
-            authors=book_data.authors
+            authors=book_data.authors,
         )
 
         async with self.uow:

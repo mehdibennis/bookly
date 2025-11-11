@@ -1,13 +1,10 @@
 # logique métier (utilise le repo)
 # Cache redis à ajouter ici
 import logging
-from datetime import date
 
-from app.core.config import settings
 from app.core.exceptions import ConflictException, NotFoundException
-from app.domain.repositories import ICacheService
 from app.domain.entities import AuthorEntity
-from app.domain.repositories import IAuthorRepository
+from app.domain.repositories import IAuthorRepository, ICacheService
 from app.domain.unit_of_work import IUnitOfWork
 from app.domain.value_objects import AuthorCreateData, AuthorUpdateData
 
@@ -30,6 +27,7 @@ class AuthorService:
         # Cache is injected to avoid concrete infra dependency in the service
         # Provide a no-op in-memory cache when none is supplied to keep tests simple.
         if cache is None:
+
             class _NoopCache:
                 async def connect(self):  # pragma: no cover
                     return None
@@ -87,11 +85,12 @@ class AuthorService:
         if cached:  # pragma: no cover - cache hit depends on environment
             await self.cache.close()
             return cached
-        
+
         from app.domain.value_objects import PaginationParams
+
         pagination = PaginationParams(page=page, size=size)
         result = await self.repo.get_paginated(pagination, search=search)
-        
+
         # Return domain result - let API layer handle serialization
         response = {
             "data": result.data,
@@ -103,7 +102,7 @@ class AuthorService:
                 "last_page": result.meta.last_page,
                 "next_page": result.meta.next_page,
                 "previous_page": result.meta.previous_page,
-            }
+            },
         }
         # Cache the response
         if search:
@@ -147,16 +146,16 @@ class AuthorService:
             raise ValueError("Le prénom de l'auteur ne peut pas être vide.")
         if not author_in.last_name or not author_in.last_name.strip():
             raise ValueError("Le nom de l'auteur ne peut pas être vide.")
-        
+
         # Normalize names
         first_name = author_in.first_name.strip().title()
         last_name = author_in.last_name.strip().title()
-        
+
         # Check for existing author
         existing_author = await self.repo.get_by_full_name(first_name, last_name)
         if existing_author:
             raise ConflictException(f"Un auteur avec le nom '{first_name} {last_name}' existe déjà.")
-        
+
         # Create normalized data
         normalized_data = AuthorCreateData(
             first_name=first_name,
@@ -167,7 +166,7 @@ class AuthorService:
             bio=author_in.bio,
             photo_url=author_in.photo_url,
         )
-        
+
         async with self.uow:
             return await self.repo.create(normalized_data)
 

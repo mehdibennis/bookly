@@ -10,13 +10,7 @@ from sqlalchemy.orm import selectinload
 from app.db.models.book_model import Book
 from app.domain.entities import BookEntity
 from app.domain.repositories import IBookRepository
-from app.domain.value_objects import (
-    BookCreateData,
-    BookUpdateData,
-    PaginatedResult,
-    PaginationMeta,
-    PaginationParams,
-)
+from app.domain.value_objects import BookCreateData, BookUpdateData, PaginatedResult, PaginationMeta, PaginationParams
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -52,12 +46,7 @@ class BookRepository(IBookRepository):
     async def get_paginated(self, pagination: PaginationParams) -> PaginatedResult[BookEntity]:
         """Return a paginated result of books."""
         # Get books for the page
-        stmt = (
-            select(Book)
-            .options(selectinload(Book.authors))
-            .offset(pagination.skip)
-            .limit(pagination.limit)
-        )
+        stmt = select(Book).options(selectinload(Book.authors)).offset(pagination.skip).limit(pagination.limit)
         result = await self.session.execute(stmt)
         books = result.scalars().all()
 
@@ -83,10 +72,11 @@ class BookRepository(IBookRepository):
         """Create a new book from domain data."""
         # Create the book model
         book = Book(title=book_data.title)
-        
+
         # Add authors if any
         if book_data.authors:
             from app.db.models.author_model import Author
+
             author_stmt = select(Author).where(Author.id.in_(book_data.authors))
             author_result = await self.session.execute(author_stmt)
             authors = author_result.scalars().all()
@@ -102,7 +92,7 @@ class BookRepository(IBookRepository):
         stmt = select(Book).options(selectinload(Book.authors)).where(Book.id == book_id)
         result = await self.session.execute(stmt)
         book = result.scalar_one_or_none()
-        
+
         if not book:
             return None
 
@@ -112,6 +102,7 @@ class BookRepository(IBookRepository):
 
         if book_data.authors is not None:
             from app.db.models.author_model import Author
+
             author_stmt = select(Author).where(Author.id.in_(book_data.authors))
             author_result = await self.session.execute(author_stmt)
             authors = author_result.scalars().all()
@@ -126,7 +117,7 @@ class BookRepository(IBookRepository):
         stmt = select(Book).where(Book.id == book_id)
         result = await self.session.execute(stmt)
         book = result.scalar_one_or_none()
-        
+
         if not book:
             return False
 
@@ -137,20 +128,22 @@ class BookRepository(IBookRepository):
         """Convert SQLAlchemy model to domain entity."""
         author_ids = [cast(int, a.id) for a in (book.authors or [])]
         author_details = []
-        
-        for author in (book.authors or []):
-            author_details.append({
-                "id": author.id,
-                "first_name": author.first_name,
-                "last_name": author.last_name,
-                "birth_date": author.birth_date.isoformat() if author.birth_date else None,
-                "death_date": author.death_date.isoformat() if author.death_date else None,
-                "nationality": author.nationality,
-                "bio": author.bio,
-                "photo_url": author.photo_url,
-                "created_at": author.created_at.isoformat() if author.created_at else None,
-                "updated_at": author.updated_at.isoformat() if author.updated_at else None,
-            })
+
+        for author in book.authors or []:
+            author_details.append(
+                {
+                    "id": author.id,
+                    "first_name": author.first_name,
+                    "last_name": author.last_name,
+                    "birth_date": author.birth_date.isoformat() if author.birth_date else None,
+                    "death_date": author.death_date.isoformat() if author.death_date else None,
+                    "nationality": author.nationality,
+                    "bio": author.bio,
+                    "photo_url": author.photo_url,
+                    "created_at": author.created_at.isoformat() if author.created_at else None,
+                    "updated_at": author.updated_at.isoformat() if author.updated_at else None,
+                }
+            )
 
         return BookEntity(
             id=cast(int, book.id),

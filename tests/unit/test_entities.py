@@ -2,9 +2,8 @@
 Tests for domain entities.
 Tests normalization and entity behavior.
 """
-from datetime import date, datetime
 
-import pytest
+from datetime import date, datetime
 
 from app.domain.entities import AuthorEntity, BookEntity
 
@@ -27,7 +26,7 @@ class TestAuthorEntity:
         death = date(2020, 1, 1)
         created = datetime(2023, 1, 1, 12, 0, 0)
         updated = datetime(2023, 1, 2, 12, 0, 0)
-        
+
         author = AuthorEntity(
             id=1,
             first_name="Jane",
@@ -40,7 +39,7 @@ class TestAuthorEntity:
             created_at=created,
             updated_at=updated,
         )
-        
+
         assert author.birth_date == birth
         assert author.death_date == death
         assert author.nationality == "USA"
@@ -154,9 +153,9 @@ class TestBookEntity:
         """Default factory should create independent lists for authors."""
         book1 = BookEntity(id=1, title="Book 1")
         book2 = BookEntity(id=2, title="Book 2")
-        
+
         book1.authors.append(1)
-        
+
         assert book1.authors == [1]
         assert book2.authors == []
 
@@ -164,8 +163,8 @@ class TestBookEntity:
         """Default factory should create independent lists for authors_details."""
         book1 = BookEntity(id=1, title="Book 1")
         book2 = BookEntity(id=2, title="Book 2")
-        
+
         book1.authors_details.append({"id": 1})
-        
+
         assert len(book1.authors_details) == 1
         assert len(book2.authors_details) == 0

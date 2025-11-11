@@ -3,7 +3,6 @@ from fastapi import APIRouter, Depends, Query, status
 from app.api.dependencies import get_book_service
 from app.api.mappers import BookMapper, PaginationMapper
 from app.core.keycloak_auth import get_current_user
-from app.domain.value_objects import PaginationParams
 from app.schemas.book_schema import Book, BookCreate, BookUpdate
 from app.schemas.pagination import PaginatedResponse
 from app.services.book_service import BookService

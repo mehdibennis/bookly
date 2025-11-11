@@ -3,18 +3,25 @@
 import logging
 from datetime import date as date_type
 from datetime import datetime as datetime_type
-from typing import cast, TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
-from sqlalchemy import func, select, or_
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 if TYPE_CHECKING:
     from app.db.models.author_model import Author
 else:
     from app.db.models.author_model import Author
+
 from app.domain.entities import AuthorEntity
 from app.domain.repositories import IAuthorRepository
-from app.domain.value_objects import AuthorCreateData, AuthorUpdateData, PaginationParams, PaginationMeta, PaginatedResult
+from app.domain.value_objects import (
+    AuthorCreateData,
+    AuthorUpdateData,
+    PaginatedResult,
+    PaginationMeta,
+    PaginationParams,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -92,28 +99,23 @@ class AuthorRepository(IAuthorRepository):
         """
         stmt = select(Author)
         count_stmt = select(func.count(Author.id))
-        
+
         if search:
             pattern = f"%{search}%"
             stmt = stmt.where(or_(Author.first_name.ilike(pattern), Author.last_name.ilike(pattern)))
             count_stmt = count_stmt.where(or_(Author.first_name.ilike(pattern), Author.last_name.ilike(pattern)))
-        
+
         stmt = stmt.offset(pagination.skip).limit(pagination.limit)
         result = await self.session.execute(stmt)
         authors = result.scalars().all()
-        
+
         count_result = await self.session.execute(count_stmt)
         total = count_result.scalar_one()
-        
+
         entities = [self._model_to_entity(a) for a in authors]
-        
-        meta = PaginationMeta(
-            total=total,
-            page=pagination.page,
-            size=pagination.size,
-            count=len(entities)
-        )
-        
+
+        meta = PaginationMeta(total=total, page=pagination.page, size=pagination.size, count=len(entities))
+
         return PaginatedResult(data=entities, meta=meta)
 
     async def create(self, author_data: AuthorCreateData) -> AuthorEntity:
@@ -138,31 +140,31 @@ class AuthorRepository(IAuthorRepository):
         stmt = select(Author).where(Author.id == author_id)
         result = await self.session.execute(stmt)
         db_author = result.scalar_one_or_none()
-        
+
         if not db_author:
             return None
-        
+
         # Update only fields that are provided (not None)
         if author_data.first_name is not None:
-            setattr(db_author, 'first_name', author_data.first_name)
+            setattr(db_author, "first_name", author_data.first_name)
         if author_data.last_name is not None:
-            setattr(db_author, 'last_name', author_data.last_name)
+            setattr(db_author, "last_name", author_data.last_name)
         if author_data.birth_date is not None:
-            setattr(db_author, 'birth_date', _parse_date(author_data.birth_date))
+            setattr(db_author, "birth_date", _parse_date(author_data.birth_date))
         if author_data.death_date is not None:
-            setattr(db_author, 'death_date', _parse_date(author_data.death_date))
+            setattr(db_author, "death_date", _parse_date(author_data.death_date))
         if author_data.nationality is not None:
-            setattr(db_author, 'nationality', author_data.nationality)
+            setattr(db_author, "nationality", author_data.nationality)
         if author_data.bio is not None:
-            setattr(db_author, 'bio', author_data.bio)
+            setattr(db_author, "bio", author_data.bio)
         if author_data.photo_url is not None:
-            setattr(db_author, 'photo_url', author_data.photo_url)
-        
+            setattr(db_author, "photo_url", author_data.photo_url)
+
         self.session.add(db_author)
         # Flush changes so generated columns (if any) are available.
         await self.session.flush()
         await self.session.refresh(db_author)
-        
+
         return self._model_to_entity(db_author)
 
     async def partial_update(self, author_id: int, author_data: AuthorUpdateData) -> AuthorEntity | None:

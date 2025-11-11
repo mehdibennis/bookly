@@ -2,15 +2,14 @@
 Tests for API mappers.
 Tests conversion between API DTOs and domain objects.
 """
-from datetime import date, datetime
 
-import pytest
+from datetime import date, datetime
 
 from app.api.mappers import AuthorMapper, BookMapper, PaginationMapper, _parse_date
 from app.domain.entities import AuthorEntity, BookEntity
 from app.domain.value_objects import PaginatedResult, PaginationMeta
-from app.schemas.author_schema import Author, AuthorCreate, AuthorUpdate
-from app.schemas.book_schema import Book, BookCreate, BookUpdate
+from app.schemas.author_schema import AuthorCreate, AuthorUpdate
+from app.schemas.book_schema import BookCreate, BookUpdate
 
 
 class TestParseDateHelper:
@@ -50,7 +49,7 @@ class TestBookMapper:
         """Convert BookCreate DTO to BookCreateData."""
         dto = BookCreate(title="Test Book", authors=[1, 2, 3])
         domain = BookMapper.create_dto_to_domain(dto)
-        
+
         assert domain.title == "Test Book"
         assert domain.authors == [1, 2, 3]
 
@@ -58,7 +57,7 @@ class TestBookMapper:
         """Convert BookUpdate DTO to BookUpdateData with all fields."""
         dto = BookUpdate(title="Updated Title", authors=[4, 5])
         domain = BookMapper.update_dto_to_domain(dto)
-        
+
         assert domain.title == "Updated Title"
         assert domain.authors == [4, 5]
 
@@ -66,7 +65,7 @@ class TestBookMapper:
         """Convert BookUpdate DTO to BookUpdateData with partial fields."""
         dto = BookUpdate(title="Only Title")
         domain = BookMapper.update_dto_to_domain(dto)
-        
+
         assert domain.title == "Only Title"
         assert domain.authors is None
 
@@ -74,7 +73,7 @@ class TestBookMapper:
         """Convert BookEntity to Book DTO with minimal fields."""
         entity = BookEntity(id=1, title="Test Book")
         dto = BookMapper.entity_to_dto(entity)
-        
+
         assert dto.id == 1
         assert dto.title == "Test Book"
         assert dto.authors == []
@@ -84,7 +83,7 @@ class TestBookMapper:
         """Convert BookEntity to Book DTO with authors."""
         entity = BookEntity(id=1, title="Test Book", authors=[1, 2], authors_number=2)
         dto = BookMapper.entity_to_dto(entity)
-        
+
         assert dto.authors == [1, 2]
         assert dto.authors_number == 2
 
@@ -93,14 +92,14 @@ class TestBookMapper:
         details = [{"id": 1, "name": "Author 1"}]
         entity = BookEntity(id=1, title="Test Book", authors_details=details)
         dto = BookMapper.entity_to_dto(entity)
-        
+
         assert dto.authors_details == details
 
     def test_entity_to_dto_none_id_defaults_to_zero(self):
         """Convert BookEntity with None id should default to 0."""
         entity = BookEntity(id=None, title="Test Book")
         dto = BookMapper.entity_to_dto(entity)
-        
+
         assert dto.id == 0
 
     def test_entities_to_dtos(self):
@@ -111,7 +110,7 @@ class TestBookMapper:
             BookEntity(id=3, title="Book 3"),
         ]
         dtos = BookMapper.entities_to_dtos(entities)
-        
+
         assert len(dtos) == 3
         assert dtos[0].id == 1
         assert dtos[1].id == 2
@@ -130,7 +129,7 @@ class TestAuthorMapper:
         """Convert AuthorCreate DTO to AuthorCreateData with minimal fields."""
         dto = AuthorCreate(first_name="John", last_name="Doe")
         domain = AuthorMapper.create_dto_to_domain(dto)
-        
+
         assert domain.first_name == "John"
         assert domain.last_name == "Doe"
         assert domain.birth_date is None
@@ -148,7 +147,7 @@ class TestAuthorMapper:
             photo_url="http://example.com/photo.jpg",
         )
         domain = AuthorMapper.create_dto_to_domain(dto)
-        
+
         assert domain.first_name == "Jane"
         assert domain.last_name == "Smith"
         assert domain.birth_date == date(1950, 1, 1)
@@ -166,7 +165,7 @@ class TestAuthorMapper:
             death_date="2050-12-31",  # type: ignore
         )
         domain = AuthorMapper.create_dto_to_domain(dto)
-        
+
         assert domain.birth_date == date(1980, 5, 15)
         assert domain.death_date == date(2050, 12, 31)
 
@@ -174,7 +173,7 @@ class TestAuthorMapper:
         """Convert AuthorUpdate DTO to AuthorUpdateData with partial fields."""
         dto = AuthorUpdate(first_name="Updated")
         domain = AuthorMapper.update_dto_to_domain(dto)
-        
+
         assert domain.first_name == "Updated"
         assert domain.last_name is None
 
@@ -188,7 +187,7 @@ class TestAuthorMapper:
             bio="Updated bio",
         )
         domain = AuthorMapper.update_dto_to_domain(dto)
-        
+
         assert domain.first_name == "Updated"
         assert domain.last_name == "Author"
         assert domain.birth_date == date(1960, 3, 10)
@@ -198,7 +197,7 @@ class TestAuthorMapper:
         """Convert AuthorEntity to Author DTO with minimal fields."""
         entity = AuthorEntity(id=1, first_name="John", last_name="Doe")
         dto = AuthorMapper.entity_to_dto(entity)
-        
+
         assert dto.id == 1
         assert dto.first_name == "John"
         assert dto.last_name == "Doe"
@@ -210,7 +209,7 @@ class TestAuthorMapper:
         death = date(2020, 1, 1)
         created = datetime(2023, 1, 1, 12, 0, 0)
         updated = datetime(2023, 1, 2, 12, 0, 0)
-        
+
         entity = AuthorEntity(
             id=1,
             first_name="Jane",
@@ -224,7 +223,7 @@ class TestAuthorMapper:
             updated_at=updated,
         )
         dto = AuthorMapper.entity_to_dto(entity)
-        
+
         assert dto.id == 1
         assert dto.birth_date == birth
         assert dto.death_date == death
@@ -238,7 +237,7 @@ class TestAuthorMapper:
         """Convert AuthorEntity with None id should default to 0."""
         entity = AuthorEntity(id=None, first_name="John", last_name="Doe")
         dto = AuthorMapper.entity_to_dto(entity)
-        
+
         assert dto.id == 0
 
     def test_entities_to_dtos(self):
@@ -249,7 +248,7 @@ class TestAuthorMapper:
             AuthorEntity(id=3, first_name="Bob", last_name="Johnson"),
         ]
         dtos = AuthorMapper.entities_to_dtos(entities)
-        
+
         assert len(dtos) == 3
         assert dtos[0].id == 1
         assert dtos[1].first_name == "Jane"
@@ -267,14 +266,14 @@ class TestPaginationMapper:
     def test_params_from_query_defaults(self):
         """Create PaginationParams with default values."""
         params = PaginationMapper.params_from_query()
-        
+
         assert params.page == 1
         assert params.size == 10
 
     def test_params_from_query_custom_values(self):
         """Create PaginationParams with custom values."""
         params = PaginationMapper.params_from_query(page=3, size=25)
-        
+
         assert params.page == 3
         assert params.size == 25
 
@@ -286,12 +285,9 @@ class TestPaginationMapper:
         ]
         meta = PaginationMeta(total=10, page=1, size=10, count=2)
         domain_result = PaginatedResult(data=entities, meta=meta)
-        
-        response = PaginationMapper.result_to_response(
-            domain_result,
-            BookMapper.entities_to_dtos
-        )
-        
+
+        response = PaginationMapper.result_to_response(domain_result, BookMapper.entities_to_dtos)
+
         assert len(response.data) == 2
         assert response.data[0].id == 1
         assert response.data[0].title == "Book 1"
@@ -307,12 +303,9 @@ class TestPaginationMapper:
         ]
         meta = PaginationMeta(total=20, page=2, size=5, count=2)
         domain_result = PaginatedResult(data=entities, meta=meta)
-        
-        response = PaginationMapper.result_to_response(
-            domain_result,
-            AuthorMapper.entities_to_dtos
-        )
-        
+
+        response = PaginationMapper.result_to_response(domain_result, AuthorMapper.entities_to_dtos)
+
         assert len(response.data) == 2
         assert response.data[0].first_name == "John"
         assert response.meta.total == 20
@@ -323,12 +316,9 @@ class TestPaginationMapper:
         """Convert empty PaginatedResult to PaginatedResponse."""
         meta = PaginationMeta(total=0, page=1, size=10, count=0)
         domain_result = PaginatedResult(data=[], meta=meta)
-        
-        response = PaginationMapper.result_to_response(
-            domain_result,
-            BookMapper.entities_to_dtos
-        )
-        
+
+        response = PaginationMapper.result_to_response(domain_result, BookMapper.entities_to_dtos)
+
         assert response.data == []
         assert response.meta.total == 0
         assert response.meta.count == 0
@@ -338,12 +328,9 @@ class TestPaginationMapper:
         entities = [BookEntity(id=1, title="Book 1")]
         meta = PaginationMeta(total=50, page=3, size=10, count=1)
         domain_result = PaginatedResult(data=entities, meta=meta)
-        
-        response = PaginationMapper.result_to_response(
-            domain_result,
-            BookMapper.entities_to_dtos
-        )
-        
+
+        response = PaginationMapper.result_to_response(domain_result, BookMapper.entities_to_dtos)
+
         assert response.meta.last_page == 5
         assert response.meta.next_page == 4
         assert response.meta.previous_page == 2

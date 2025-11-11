@@ -1,18 +1,16 @@
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.dependencies import get_author_service
 from app.api.mappers import AuthorMapper
 from app.core.keycloak_auth import get_current_user
 from app.db.session import get_session
-from app.db.unit_of_work import SqlAlchemyUnitOfWork
-from app.repositories.author_repository import AuthorRepository
 from app.schemas.author_schema import Author, AuthorCreate, AuthorUpdate
 from app.schemas.pagination import PaginatedResponse
 from app.services.author_service import AuthorService
 
 router = APIRouter(prefix="/authors", tags=["authors"])
 
-from app.api.dependencies import get_author_service
 
 # --- READ ALL (PAGINATED: page/size) ---
 @router.get(
@@ -87,9 +85,8 @@ async def get_author(
     author_id: int,
     session: AsyncSession = Depends(get_session),
     user=Depends(get_current_user),
-        service: AuthorService = Depends(get_author_service),
+    service: AuthorService = Depends(get_author_service),
 ):
-    
     """Récupère un auteur par son ID."""
     author = await service.get_author(author_id)
     return Author.model_validate(author.__dict__)  # pragma: no cover
@@ -201,5 +198,5 @@ async def delete_author(
     author_id: int,
     service: AuthorService = Depends(get_author_service),
     user=Depends(get_current_user),
-    ):
+):
     await service.delete_author(author_id)

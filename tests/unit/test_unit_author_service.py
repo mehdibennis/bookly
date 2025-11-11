@@ -9,8 +9,8 @@ import pytest
 
 from app.core.exceptions import ConflictException, NotFoundException
 from app.domain.entities import AuthorEntity
-from app.domain.value_objects import AuthorCreateData, AuthorUpdateData, PaginatedResult, PaginationMeta
-from app.schemas.author_schema import AuthorCreate, AuthorUpdate
+from app.domain.value_objects import AuthorUpdateData, PaginatedResult, PaginationMeta
+from app.schemas.author_schema import AuthorCreate
 from app.services.author_service import AuthorService
 
 

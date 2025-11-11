@@ -1,14 +1,14 @@
 from uuid import uuid4
 
 import pytest
-from tests.mocks.cache_service import MockCacheService
 
 from app.db.session import get_session
 from app.db.unit_of_work import SqlAlchemyUnitOfWork
-from app.domain.value_objects import BookCreateData, BookUpdateData
+from app.domain.value_objects import BookUpdateData
 from app.main import app
 from app.repositories.book_repository import BookRepository
 from app.services.book_service import BookService
+from tests.mocks.cache_service import MockCacheService
 
 
 @pytest.mark.asyncio

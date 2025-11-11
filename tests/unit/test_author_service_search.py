@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, MagicMock, ANY
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 

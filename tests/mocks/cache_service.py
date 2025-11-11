@@ -3,6 +3,7 @@
 This provides a simple in-memory cache implementation that can be used
 in tests without requiring Redis infrastructure.
 """
+
 from app.domain.entities import AuthorEntity, BookEntity
 from app.domain.repositories import ICacheService
 from app.domain.value_objects import PaginatedResult

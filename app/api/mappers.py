@@ -3,6 +3,7 @@
 These mappers serve as adapters between the domain layer and the API layer,
 ensuring clean separation of concerns and preventing coupling between layers.
 """
+
 from datetime import date
 from typing import Callable, TypeVar
 
@@ -13,16 +14,14 @@ from app.domain.value_objects import (
     BookCreateData,
     BookUpdateData,
     PaginatedResult,
-    PaginationMeta,
     PaginationParams,
 )
 from app.schemas.author_schema import Author, AuthorCreate, AuthorUpdate
 from app.schemas.book_schema import Book, BookCreate, BookUpdate
 from app.schemas.pagination import PaginatedResponse
 
-
-T = TypeVar('T')
-D = TypeVar('D')
+T = TypeVar("T")
+D = TypeVar("D")
 
 
 def _parse_date(value: date | str | None) -> date | None:
@@ -135,23 +134,20 @@ class PaginationMapper:
         return PaginationParams(page=page, size=size)
 
     @staticmethod
-    def result_to_response(
-        domain_result: PaginatedResult[T],
-        mapper_func: Callable[[list[T]], list[D]]
-    ) -> PaginatedResponse[D]:
+    def result_to_response(domain_result: PaginatedResult[T], mapper_func: Callable[[list[T]], list[D]]) -> PaginatedResponse[D]:
         """Convert domain PaginatedResult to API PaginatedResponse.
-        
+
         Args:
             domain_result: The domain paginated result
             mapper_func: Function to convert list of domain entities to list of DTOs
-            
+
         Returns:
             API PaginatedResponse
         """
         from app.schemas.pagination import PaginationMeta as APIPaginationMeta
-        
+
         data = mapper_func(domain_result.data)
-        
+
         return PaginatedResponse(
             data=data,
             meta=APIPaginationMeta(
@@ -162,5 +158,5 @@ class PaginationMapper:
                 last_page=domain_result.meta.last_page,
                 next_page=domain_result.meta.next_page,
                 previous_page=domain_result.meta.previous_page,
-            )
+            ),
         )

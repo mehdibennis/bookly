@@ -3,17 +3,18 @@
 These are immutable objects that represent domain concepts
 and can be used across different layers without creating dependencies.
 """
+
 from dataclasses import dataclass
 from datetime import date
-from typing import Any, Generic, TypeVar
+from typing import Generic, TypeVar
 
-
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 @dataclass(frozen=True)
 class BookCreateData:
     """Value object for book creation data."""
+
     title: str
     authors: list[int]
 
@@ -29,6 +30,7 @@ class BookCreateData:
 @dataclass(frozen=True)
 class BookUpdateData:
     """Value object for book update data."""
+
     title: str | None = None
     authors: list[int] | None = None
 
@@ -44,6 +46,7 @@ class BookUpdateData:
 @dataclass(frozen=True)
 class AuthorCreateData:
     """Value object for author creation data."""
+
     first_name: str
     last_name: str
     birth_date: date | None = None
@@ -64,6 +67,7 @@ class AuthorCreateData:
 @dataclass(frozen=True)
 class AuthorUpdateData:
     """Value object for author update data."""
+
     first_name: str | None = None
     last_name: str | None = None
     birth_date: date | None = None
@@ -77,14 +81,14 @@ class AuthorUpdateData:
             raise ValueError("First name cannot be empty when provided")
         if self.last_name is not None and (not self.last_name or not self.last_name.strip()):
             raise ValueError("Last name cannot be empty when provided")
-        if (self.birth_date and self.death_date and 
-            self.birth_date > self.death_date):
+        if self.birth_date and self.death_date and self.birth_date > self.death_date:
             raise ValueError("Death date cannot be before birth date")
 
 
 @dataclass(frozen=True)
 class PaginationParams:
     """Value object for pagination parameters."""
+
     page: int
     size: int
 
@@ -108,6 +112,7 @@ class PaginationParams:
 @dataclass(frozen=True)
 class PaginationMeta:
     """Value object for pagination metadata."""
+
     total: int
     page: int
     size: int
@@ -132,5 +137,6 @@ class PaginationMeta:
 @dataclass(frozen=True)
 class PaginatedResult(Generic[T]):
     """Generic value object for paginated results."""
+
     data: list[T]
     meta: PaginationMeta

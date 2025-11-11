@@ -6,7 +6,6 @@ Covers business logic validation and service-level error handling.
 from uuid import uuid4
 
 import pytest
-from tests.mocks.cache_service import MockCacheService
 from conftest import get_unique_rate_headers
 
 from app.core.exceptions import NotFoundException
@@ -17,6 +16,7 @@ from app.domain.value_objects import BookCreateData, BookUpdateData
 from app.main import app
 from app.repositories.book_repository import BookRepository
 from app.services.book_service import BookService
+from tests.mocks.cache_service import MockCacheService
 
 
 class TestServiceLayerEdgeCases:
@@ -40,10 +40,10 @@ class TestServiceLayerEdgeCases:
             repo = BookRepository(session)
             uow = SqlAlchemyUnitOfWork(session)
             cache = MockCacheService()
-            service = BookService(repo, uow, cache)
+            BookService(repo, uow, cache)
             # authors are required, but here we test empty title
             with pytest.raises(ValueError) as exc_info:
-                book_data = BookCreateData(title="   ", authors=[test_author_id])
+                BookCreateData(title="   ", authors=[test_author_id])
             # Accept both French and English error messages
             error_msg = str(exc_info.value).lower()
             assert "titre" in error_msg or "title" in error_msg
@@ -59,7 +59,8 @@ class TestServiceLayerEdgeCases:
             book = await service.create_book(BookCreateData(title=f"Update Test {uuid4()}", authors=[test_author_id]))
             with pytest.raises(ValueError) as exc_info:
                 await service.update_book(book.id, BookUpdateData(title="   "))
-            error_msg = str(exc_info.value).lower(); assert "titre" in error_msg or "title" in error_msg
+            error_msg = str(exc_info.value).lower()
+            assert "titre" in error_msg or "title" in error_msg
 
     @pytest.mark.asyncio
     async def test_book_service_update_with_negativ_id(self, test_author_id):

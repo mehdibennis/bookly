@@ -8,9 +8,9 @@ from fastapi.responses import JSONResponse
 
 from app.core.config import settings
 from app.core.exceptions import AppException
+from app.core.exceptions import ConflictException as DomainConflictException
+from app.core.exceptions import NotFoundException as DomainNotFoundException
 from app.core.logging_config import request_id_var
-from app.core.exceptions import NotFoundException as DomainNotFoundException, \
-    ConflictException as DomainConflictException
 
 # Configuration du logger
 logger = logging.getLogger(__name__)
