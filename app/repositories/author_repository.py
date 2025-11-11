@@ -83,16 +83,22 @@ class AuthorRepository(IAuthorRepository):
             return None
         return self._model_to_entity(author)
 
-    async def get_by_full_name(self, first_name: str, last_name: str) -> AuthorEntity | None:
+    async def get_by_full_name(
+        self, first_name: str, last_name: str
+    ) -> AuthorEntity | None:
         """Fetch a single author by their full name, return a domain entity or None."""
-        stmt = select(Author).where(Author.first_name == first_name, Author.last_name == last_name)
+        stmt = select(Author).where(
+            Author.first_name == first_name, Author.last_name == last_name
+        )
         result = await self.session.execute(stmt)
         author = result.scalar_one_or_none()
         if not author:
             return None
         return self._model_to_entity(author)
 
-    async def get_paginated(self, pagination: PaginationParams, search: str | None = None) -> PaginatedResult[AuthorEntity]:
+    async def get_paginated(
+        self, pagination: PaginationParams, search: str | None = None
+    ) -> PaginatedResult[AuthorEntity]:
         """Return a paginated result of authors.
 
         Optionally filters by 'search' (ILIKE) on first_name or last_name.
@@ -102,8 +108,12 @@ class AuthorRepository(IAuthorRepository):
 
         if search:
             pattern = f"%{search}%"
-            stmt = stmt.where(or_(Author.first_name.ilike(pattern), Author.last_name.ilike(pattern)))
-            count_stmt = count_stmt.where(or_(Author.first_name.ilike(pattern), Author.last_name.ilike(pattern)))
+            stmt = stmt.where(
+                or_(Author.first_name.ilike(pattern), Author.last_name.ilike(pattern))
+            )
+            count_stmt = count_stmt.where(
+                or_(Author.first_name.ilike(pattern), Author.last_name.ilike(pattern))
+            )
 
         stmt = stmt.offset(pagination.skip).limit(pagination.limit)
         result = await self.session.execute(stmt)
@@ -114,7 +124,9 @@ class AuthorRepository(IAuthorRepository):
 
         entities = [self._model_to_entity(a) for a in authors]
 
-        meta = PaginationMeta(total=total, page=pagination.page, size=pagination.size, count=len(entities))
+        meta = PaginationMeta(
+            total=total, page=pagination.page, size=pagination.size, count=len(entities)
+        )
 
         return PaginatedResult(data=entities, meta=meta)
 
@@ -135,7 +147,9 @@ class AuthorRepository(IAuthorRepository):
         await self.session.flush()
         return self._model_to_entity(new_author)
 
-    async def update(self, author_id: int, author_data: AuthorUpdateData) -> AuthorEntity | None:
+    async def update(
+        self, author_id: int, author_data: AuthorUpdateData
+    ) -> AuthorEntity | None:
         """Update an existing author; returns the updated entity or None if missing."""
         stmt = select(Author).where(Author.id == author_id)
         result = await self.session.execute(stmt)
@@ -167,7 +181,9 @@ class AuthorRepository(IAuthorRepository):
 
         return self._model_to_entity(db_author)
 
-    async def partial_update(self, author_id: int, author_data: AuthorUpdateData) -> AuthorEntity | None:
+    async def partial_update(
+        self, author_id: int, author_data: AuthorUpdateData
+    ) -> AuthorEntity | None:
         """
         Partially update an author with only the provided fields.
 

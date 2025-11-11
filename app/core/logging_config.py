@@ -7,7 +7,7 @@ request_id_var: ContextVar[str] = ContextVar("request_id", default="-")
 
 
 class RequestIdFilter(logging.Filter):
-    def filter(self, record: logging.LogRecord) -> bool:  # type: ignore[override]
+    def filter(self, record: logging.LogRecord) -> bool:
         try:
             record.request_id = request_id_var.get()
         except Exception:
@@ -16,7 +16,7 @@ class RequestIdFilter(logging.Filter):
 
 
 class JsonFormatter(logging.Formatter):
-    def format(self, record: logging.LogRecord) -> str:  # type: ignore[override]
+    def format(self, record: logging.LogRecord) -> str:
         payload = {
             "timestamp": self.formatTime(record, "%Y-%m-%dT%H:%M:%S%z"),
             "name": record.name,

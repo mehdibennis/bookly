@@ -30,7 +30,9 @@ async def test_app_exception_handler_direct():
 @pytest.mark.asyncio
 async def test_validation_exception_handler_single_missing():
     req = DummyRequest()
-    exc = RequestValidationError([{"loc": ["body", "title"], "type": "missing", "msg": "field required"}])
+    exc = RequestValidationError(
+        [{"loc": ["body", "title"], "type": "missing", "msg": "field required"}]
+    )
     resp = await validation_exception_handler(req, exc)
     assert resp.status_code == 422
     assert b"requis" in resp.body
@@ -113,7 +115,9 @@ async def test_generic_exception_handler(client):
     # We don't have valid auth, so may get 401 before 500; bypass by patching dependency
     from app.core.keycloak_auth import get_current_user
 
-    app.dependency_overrides[get_current_user] = lambda: type("U", (), {"username": "x"})()
+    app.dependency_overrides[get_current_user] = lambda: type(
+        "U", (), {"username": "x"}
+    )()
     resp = await client.get("/crash")
     # Accept 500 (handler) or 401 if override failed
     assert resp.status_code in [500]

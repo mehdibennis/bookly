@@ -70,7 +70,9 @@ class RedisCache:
             return json.loads(data)
         return None
 
-    async def set_authors_page_search(self, page: int, size: int, search: str, value, expire: int = 60):
+    async def set_authors_page_search(
+        self, page: int, size: int, search: str, value, expire: int = 60
+    ):
         key = f"authors:page:{page}:size:{size}:search:{search}"
         if not self.redis:
             return

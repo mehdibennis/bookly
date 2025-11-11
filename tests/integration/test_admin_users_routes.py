@@ -15,7 +15,11 @@ class FakeKC:
     async def create_user(self, **kwargs):
         self._counter += 1
         uid = f"u{self._counter}"
-        user = {"id": uid, "username": kwargs.get("username"), "email": kwargs.get("email")}
+        user = {
+            "id": uid,
+            "username": kwargs.get("username"),
+            "email": kwargs.get("email"),
+        }
         self._users[uid] = user
         return uid
 
@@ -24,9 +28,13 @@ class FakeKC:
 
     async def update_user(self, user_id: str, **kwargs):
         if user_id in self._users:
-            self._users[user_id].update({k: v for k, v in kwargs.items() if v is not None})
+            self._users[user_id].update(
+                {k: v for k, v in kwargs.items() if v is not None}
+            )
 
-    async def set_user_password(self, user_id: str, password: str, *, temporary: bool = False):
+    async def set_user_password(
+        self, user_id: str, password: str, *, temporary: bool = False
+    ):
         # no-op in fake
         return None
 

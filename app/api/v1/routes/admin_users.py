@@ -25,13 +25,19 @@ def get_admin_client(user: KeycloakUser = Depends(get_current_user)) -> Keycloak
         logger.info("Using Service Account (client_credentials) for Admin API")
         return KeycloakAdmin()
 
-    has_rm_roles = user.has_client_role("realm-management", "view-users") or user.has_client_role("realm-management", "manage-users")
+    has_rm_roles = user.has_client_role(
+        "realm-management", "view-users"
+    ) or user.has_client_role("realm-management", "manage-users")
 
     if user.raw_token and has_rm_roles:
-        logger.info(f"User {user.username} has realm-management roles; using user token for Admin API")
+        logger.info(
+            f"User {user.username} has realm-management roles; using user token for Admin API"
+        )
         return KeycloakAdmin(admin_access_token=user.raw_token)
 
-    logger.info("No SA secret and user lacks realm-management; using default client (may fail)")
+    logger.info(
+        "No SA secret and user lacks realm-management; using default client (may fail)"
+    )
     return KeycloakAdmin()
 
 
@@ -124,7 +130,9 @@ async def set_password(
     kc: KeycloakAdmin = Depends(get_admin_client),
 ):
     try:
-        await kc.set_user_password(user_id, payload.password, temporary=payload.temporary)
+        await kc.set_user_password(
+            user_id, payload.password, temporary=payload.temporary
+        )
     except KeycloakAdminError as e:
         raise HTTPException(status_code=502, detail=str(e))
 

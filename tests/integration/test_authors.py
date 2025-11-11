@@ -160,7 +160,9 @@ async def test_get_author_by_id(client: AsyncClient, mock_keycloak_auth):
     author_id = create_response.json()["id"]
 
     # Get the author
-    response = await client.get(f"/api/v1/authors/{author_id}", headers={"Authorization": "Bearer fake_token"})
+    response = await client.get(
+        f"/api/v1/authors/{author_id}", headers={"Authorization": "Bearer fake_token"}
+    )
     assert response.status_code == 200
     data = response.json()
     assert data["id"] == author_id
@@ -171,7 +173,9 @@ async def test_get_author_by_id(client: AsyncClient, mock_keycloak_auth):
 @pytest.mark.asyncio
 async def test_get_author_not_found(client: AsyncClient, mock_keycloak_auth):
     """Test getting non-existent author returns 404."""
-    response = await client.get("/api/v1/authors/99999", headers={"Authorization": "Bearer fake_token"})
+    response = await client.get(
+        "/api/v1/authors/99999", headers={"Authorization": "Bearer fake_token"}
+    )
     assert response.status_code == 404
 
 
@@ -267,18 +271,24 @@ async def test_delete_author(client: AsyncClient, mock_keycloak_auth):
     author_id = create_response.json()["id"]
 
     # Delete the author
-    response = await client.delete(f"/api/v1/authors/{author_id}", headers={"Authorization": "Bearer fake_token"})
+    response = await client.delete(
+        f"/api/v1/authors/{author_id}", headers={"Authorization": "Bearer fake_token"}
+    )
     assert response.status_code == 204
 
     # Verify it's deleted
-    get_response = await client.get(f"/api/v1/authors/{author_id}", headers={"Authorization": "Bearer fake_token"})
+    get_response = await client.get(
+        f"/api/v1/authors/{author_id}", headers={"Authorization": "Bearer fake_token"}
+    )
     assert get_response.status_code == 404
 
 
 @pytest.mark.asyncio
 async def test_delete_author_not_found(client: AsyncClient, mock_keycloak_auth):
     """Test deleting non-existent author."""
-    response = await client.delete("/api/v1/authors/99999", headers={"Authorization": "Bearer fake_token"})
+    response = await client.delete(
+        "/api/v1/authors/99999", headers={"Authorization": "Bearer fake_token"}
+    )
     assert response.status_code == 404
 
 

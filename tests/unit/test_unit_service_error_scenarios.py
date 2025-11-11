@@ -8,10 +8,10 @@ from uuid import uuid4
 import pytest
 from conftest import get_unique_rate_headers
 
-from app.core.exceptions import NotFoundException
 from app.db.session import get_session
 from app.db.unit_of_work import SqlAlchemyUnitOfWork
 from app.domain.entities import BookEntity
+from app.domain.exceptions import NotFoundException
 from app.domain.value_objects import BookCreateData, BookUpdateData
 from app.main import app
 from app.repositories.book_repository import BookRepository
@@ -27,7 +27,11 @@ class TestServiceLayerEdgeCases:
             uow = SqlAlchemyUnitOfWork(session)
             cache = MockCacheService()
             service = BookService(repo, uow, cache)
-            book = await service.create_book(BookCreateData(title=f"GetBook Test {uuid4()}", authors=[test_author_id]))
+            book = await service.create_book(
+                BookCreateData(
+                    title=f"GetBook Test {uuid4()}", authors=[test_author_id]
+                )
+            )
             fetched = await service.get_book(book.id)
             assert fetched is not None
             assert fetched.id == book.id
@@ -56,7 +60,9 @@ class TestServiceLayerEdgeCases:
             uow = SqlAlchemyUnitOfWork(session)
             cache = MockCacheService()
             service = BookService(repo, uow, cache)
-            book = await service.create_book(BookCreateData(title=f"Update Test {uuid4()}", authors=[test_author_id]))
+            book = await service.create_book(
+                BookCreateData(title=f"Update Test {uuid4()}", authors=[test_author_id])
+            )
             with pytest.raises(ValueError) as exc_info:
                 await service.update_book(book.id, BookUpdateData(title="   "))
             error_msg = str(exc_info.value).lower()
@@ -134,7 +140,10 @@ class TestServiceLayerEdgeCases:
                 await service.create_book(book_data2)
 
             # Should be a conflict error (the exact exception type may vary)
-            assert "exist" in str(exc_info.value).lower() or "conflict" in str(exc_info.value).lower()
+            assert (
+                "exist" in str(exc_info.value).lower()
+                or "conflict" in str(exc_info.value).lower()
+            )
 
     @pytest.mark.asyncio
     async def test_book_service_update_to_duplicate_title(self, test_author_id):
@@ -161,7 +170,10 @@ class TestServiceLayerEdgeCases:
             with pytest.raises(Exception) as exc_info:
                 await service.update_book(book1.id, update_data)
 
-            assert "exist" in str(exc_info.value).lower() or "conflict" in str(exc_info.value).lower()
+            assert (
+                "exist" in str(exc_info.value).lower()
+                or "conflict" in str(exc_info.value).lower()
+            )
 
     @pytest.mark.asyncio
     async def test_book_service_validation_edge_cases(self):
@@ -187,7 +199,9 @@ class TestServiceLayerEdgeCases:
                 await service.list_books_by_page(page=1, size=0)
 
             with pytest.raises(ValueError):
-                await service.list_books_by_page(page=1, size=101)  # Assuming max size is 100
+                await service.list_books_by_page(
+                    page=1, size=101
+                )  # Assuming max size is 100
 
     @pytest.mark.asyncio
     async def test_repository_error_scenarios(self, test_author_id):
@@ -204,7 +218,9 @@ class TestServiceLayerEdgeCases:
             assert result is None
 
             # Create a book directly through repository and fetch it back by title
-            new_entity = BookEntity(id=None, title=f"Repo Created {uuid4()}", authors=[test_author_id])
+            new_entity = BookEntity(
+                id=None, title=f"Repo Created {uuid4()}", authors=[test_author_id]
+            )
             created = await repo.create(new_entity)
             assert created.id is not None
             fetched = await repo.get_by_title(created.title)
@@ -235,7 +251,9 @@ class TestServiceIntegrationEdgeCases:
         headers = get_unique_rate_headers()
 
         # Test creating book with empty title (missing author_id will yield 422)
-        resp = await client.post("/api/v1/books/", json={"title": "   "}, headers=headers)
+        resp = await client.post(
+            "/api/v1/books/", json={"title": "   "}, headers=headers
+        )
         assert resp.status_code in [400, 401, 422]
 
     @pytest.mark.asyncio

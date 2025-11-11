@@ -37,7 +37,10 @@ async def test_verify_token_success(keycloak_auth_instance):
 async def test_verify_token_expired_raises_unauthorized(keycloak_auth_instance):
     from jose.exceptions import ExpiredSignatureError
 
-    with patch("app.core.keycloak_auth.jwt.decode", side_effect=ExpiredSignatureError("Expired")):
+    with patch(
+        "app.core.keycloak_auth.jwt.decode",
+        side_effect=ExpiredSignatureError("Expired"),
+    ):
         with pytest.raises(UnauthorizedException, match="expiré"):
             await keycloak_auth_instance.verify_token("expired_token")
 
@@ -71,19 +74,28 @@ def test_keycloak_user_extracts_username_and_roles():
 
 
 def test_keycloak_user_is_admin():
-    token_info = {"preferred_username": "admin_user", "realm_access": {"roles": ["admin"]}}
+    token_info = {
+        "preferred_username": "admin_user",
+        "realm_access": {"roles": ["admin"]},
+    }
     user = KeycloakUser(token_info)
     assert user.is_admin is True
 
 
 def test_keycloak_user_not_admin():
-    token_info = {"preferred_username": "normal_user", "realm_access": {"roles": ["user"]}}
+    token_info = {
+        "preferred_username": "normal_user",
+        "realm_access": {"roles": ["user"]},
+    }
     user = KeycloakUser(token_info)
     assert user.is_admin is False
 
 
 def test_keycloak_user_has_role():
-    token_info = {"preferred_username": "u", "realm_access": {"roles": ["developer", "tester"]}}
+    token_info = {
+        "preferred_username": "u",
+        "realm_access": {"roles": ["developer", "tester"]},
+    }
     user = KeycloakUser(token_info)
     assert user.has_role("developer") is True
     assert user.has_role("admin") is False

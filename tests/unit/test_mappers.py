@@ -286,7 +286,9 @@ class TestPaginationMapper:
         meta = PaginationMeta(total=10, page=1, size=10, count=2)
         domain_result = PaginatedResult(data=entities, meta=meta)
 
-        response = PaginationMapper.result_to_response(domain_result, BookMapper.entities_to_dtos)
+        response = PaginationMapper.result_to_response(
+            domain_result, BookMapper.entities_to_dtos
+        )
 
         assert len(response.data) == 2
         assert response.data[0].id == 1
@@ -304,7 +306,9 @@ class TestPaginationMapper:
         meta = PaginationMeta(total=20, page=2, size=5, count=2)
         domain_result = PaginatedResult(data=entities, meta=meta)
 
-        response = PaginationMapper.result_to_response(domain_result, AuthorMapper.entities_to_dtos)
+        response = PaginationMapper.result_to_response(
+            domain_result, AuthorMapper.entities_to_dtos
+        )
 
         assert len(response.data) == 2
         assert response.data[0].first_name == "John"
@@ -317,7 +321,9 @@ class TestPaginationMapper:
         meta = PaginationMeta(total=0, page=1, size=10, count=0)
         domain_result = PaginatedResult(data=[], meta=meta)
 
-        response = PaginationMapper.result_to_response(domain_result, BookMapper.entities_to_dtos)
+        response = PaginationMapper.result_to_response(
+            domain_result, BookMapper.entities_to_dtos
+        )
 
         assert response.data == []
         assert response.meta.total == 0
@@ -329,7 +335,9 @@ class TestPaginationMapper:
         meta = PaginationMeta(total=50, page=3, size=10, count=1)
         domain_result = PaginatedResult(data=entities, meta=meta)
 
-        response = PaginationMapper.result_to_response(domain_result, BookMapper.entities_to_dtos)
+        response = PaginationMapper.result_to_response(
+            domain_result, BookMapper.entities_to_dtos
+        )
 
         assert response.meta.last_page == 5
         assert response.meta.next_page == 4

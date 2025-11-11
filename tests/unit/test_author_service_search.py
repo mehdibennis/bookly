@@ -36,7 +36,9 @@ def service(mock_repo, mock_uow, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_list_authors_by_page_with_search_calls_repo_with_search(service, mock_repo):
+async def test_list_authors_by_page_with_search_calls_repo_with_search(
+    service, mock_repo
+):
     authors = [
         AuthorEntity(
             id=1,
@@ -61,7 +63,7 @@ async def test_list_authors_by_page_with_search_calls_repo_with_search(service, 
 
     result = await service.list_authors_by_page(page=1, size=10, search="jo")
 
-    assert result["meta"]["total"] == 1
+    assert result.meta.total == 1
     # Repository should be called with PaginationParams and search
     assert mock_repo.get_paginated.called
     call_args = mock_repo.get_paginated.call_args
@@ -76,7 +78,9 @@ async def test_list_authors_by_page_with_search_calls_repo_with_search(service, 
 
 
 @pytest.mark.asyncio
-async def test_list_authors_by_page_without_search_keeps_legacy_cache(service, mock_repo):
+async def test_list_authors_by_page_without_search_keeps_legacy_cache(
+    service, mock_repo
+):
     authors = []
     mock_repo.get_paginated.return_value = PaginatedResult(
         data=authors,

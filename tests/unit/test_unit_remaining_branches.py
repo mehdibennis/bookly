@@ -23,7 +23,9 @@ async def test_unit_of_work_rollback_path(test_author_id):
         import uuid
 
         unique_title = f"Rollback Test {uuid.uuid4()}"
-        b = await service.create_book(BookCreate(title=unique_title, authors=[test_author_id]))
+        b = await service.create_book(
+            BookCreate(title=unique_title, authors=[test_author_id])
+        )
         assert b.id is not None
 
         class TestExc(Exception):

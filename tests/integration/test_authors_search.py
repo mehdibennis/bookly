@@ -53,7 +53,9 @@ def mock_keycloak_auth(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_list_authors_with_search_filters_results(client: AsyncClient, mock_keycloak_auth):
+async def test_list_authors_with_search_filters_results(
+    client: AsyncClient, mock_keycloak_auth
+):
     # Create a couple of authors
     a1 = {
         "first_name": "Jules",
@@ -65,8 +67,12 @@ async def test_list_authors_with_search_filters_results(client: AsyncClient, moc
         "last_name": "Hugo",
         "nationality": "French",
     }
-    r1 = await client.post("/api/v1/authors/", json=a1, headers={"Authorization": "Bearer fake_token"})
-    r2 = await client.post("/api/v1/authors/", json=a2, headers={"Authorization": "Bearer fake_token"})
+    r1 = await client.post(
+        "/api/v1/authors/", json=a1, headers={"Authorization": "Bearer fake_token"}
+    )
+    r2 = await client.post(
+        "/api/v1/authors/", json=a2, headers={"Authorization": "Bearer fake_token"}
+    )
     assert r1.status_code in (200, 201)
     assert r2.status_code in (200, 201)
 

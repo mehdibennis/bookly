@@ -19,30 +19,42 @@ class MockCacheService(ICacheService):
         """No-op for mock cache."""
         pass
 
-    async def get_books_page(self, page: int, size: int) -> PaginatedResult[BookEntity] | None:
+    async def get_books_page(
+        self, page: int, size: int
+    ) -> PaginatedResult[BookEntity] | None:
         """Get cached books page."""
         key = f"books:page:{page}:size:{size}"
         return self._cache.get(key)
 
-    async def set_books_page(self, page: int, size: int, result: PaginatedResult[BookEntity]) -> None:
+    async def set_books_page(
+        self, page: int, size: int, result: PaginatedResult[BookEntity]
+    ) -> None:
         """Cache books page."""
         key = f"books:page:{page}:size:{size}"
         self._cache[key] = result
 
     async def invalidate_books_cache(self) -> None:
         """Invalidate all books cache."""
-        self._cache = {k: v for k, v in self._cache.items() if not k.startswith("books:page:")}
+        self._cache = {
+            k: v for k, v in self._cache.items() if not k.startswith("books:page:")
+        }
 
-    async def get_authors_page(self, page: int, size: int) -> PaginatedResult[AuthorEntity] | None:
+    async def get_authors_page(
+        self, page: int, size: int
+    ) -> PaginatedResult[AuthorEntity] | None:
         """Get cached authors page."""
         key = f"authors:page:{page}:size:{size}"
         return self._cache.get(key)
 
-    async def set_authors_page(self, page: int, size: int, result: PaginatedResult[AuthorEntity]) -> None:
+    async def set_authors_page(
+        self, page: int, size: int, result: PaginatedResult[AuthorEntity]
+    ) -> None:
         """Cache authors page."""
         key = f"authors:page:{page}:size:{size}"
         self._cache[key] = result
 
     async def invalidate_authors_cache(self) -> None:
         """Invalidate all authors cache."""
-        self._cache = {k: v for k, v in self._cache.items() if not k.startswith("authors:page:")}
+        self._cache = {
+            k: v for k, v in self._cache.items() if not k.startswith("authors:page:")
+        }

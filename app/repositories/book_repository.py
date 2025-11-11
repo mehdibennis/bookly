@@ -27,7 +27,9 @@ class BookRepository(IBookRepository):
 
     async def get_by_id(self, book_id: int) -> BookEntity | None:
         """Fetch a single book by its ID, return a domain entity or None."""
-        stmt = select(Book).options(selectinload(Book.authors)).where(Book.id == book_id)
+        stmt = (
+            select(Book).options(selectinload(Book.authors)).where(Book.id == book_id)
+        )
         result = await self.session.execute(stmt)
         book = result.scalar_one_or_none()
         if not book:
@@ -36,17 +38,26 @@ class BookRepository(IBookRepository):
 
     async def get_by_title(self, title: str) -> BookEntity | None:
         """Fetch a single book by its exact title, return a domain entity or None."""
-        stmt = select(Book).options(selectinload(Book.authors)).where(Book.title == title)
+        stmt = (
+            select(Book).options(selectinload(Book.authors)).where(Book.title == title)
+        )
         result = await self.session.execute(stmt)
         book = result.scalar_one_or_none()
         if not book:
             return None
         return self._model_to_entity(book)
 
-    async def get_paginated(self, pagination: PaginationParams) -> PaginatedResult[BookEntity]:
+    async def get_paginated(
+        self, pagination: PaginationParams
+    ) -> PaginatedResult[BookEntity]:
         """Return a paginated result of books."""
         # Get books for the page
-        stmt = select(Book).options(selectinload(Book.authors)).offset(pagination.skip).limit(pagination.limit)
+        stmt = (
+            select(Book)
+            .options(selectinload(Book.authors))
+            .offset(pagination.skip)
+            .limit(pagination.limit)
+        )
         result = await self.session.execute(stmt)
         books = result.scalars().all()
 
@@ -87,9 +98,13 @@ class BookRepository(IBookRepository):
         await self.session.refresh(book, ["authors"])  # Refresh with authors
         return self._model_to_entity(book)
 
-    async def update(self, book_id: int, book_data: BookUpdateData) -> BookEntity | None:
+    async def update(
+        self, book_id: int, book_data: BookUpdateData
+    ) -> BookEntity | None:
         """Update an existing book with new data."""
-        stmt = select(Book).options(selectinload(Book.authors)).where(Book.id == book_id)
+        stmt = (
+            select(Book).options(selectinload(Book.authors)).where(Book.id == book_id)
+        )
         result = await self.session.execute(stmt)
         book = result.scalar_one_or_none()
 
@@ -135,13 +150,21 @@ class BookRepository(IBookRepository):
                     "id": author.id,
                     "first_name": author.first_name,
                     "last_name": author.last_name,
-                    "birth_date": author.birth_date.isoformat() if author.birth_date else None,
-                    "death_date": author.death_date.isoformat() if author.death_date else None,
+                    "birth_date": (
+                        author.birth_date.isoformat() if author.birth_date else None
+                    ),
+                    "death_date": (
+                        author.death_date.isoformat() if author.death_date else None
+                    ),
                     "nationality": author.nationality,
                     "bio": author.bio,
                     "photo_url": author.photo_url,
-                    "created_at": author.created_at.isoformat() if author.created_at else None,
-                    "updated_at": author.updated_at.isoformat() if author.updated_at else None,
+                    "created_at": (
+                        author.created_at.isoformat() if author.created_at else None
+                    ),
+                    "updated_at": (
+                        author.updated_at.isoformat() if author.updated_at else None
+                    ),
                 }
             )
 

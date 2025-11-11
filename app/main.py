@@ -21,13 +21,13 @@ from app.core.error_handlers import (
     value_error_handler,
 )
 from app.core.exceptions import AppException
-from app.core.exceptions import ConflictException as DomainConflictException
-from app.core.exceptions import NotFoundException as DomainNotFoundException
 from app.core.keycloak_auth import get_current_user, require_admin
 from app.core.logging_config import setup_logging
 from app.core.middleware import AccessLogMiddleware, RequestIdMiddleware
 from app.core.observability import setup_prometheus, setup_tracing
 from app.core.sentry_integration import setup_sentry
+from app.domain.exceptions import ConflictException as DomainConflictException
+from app.domain.exceptions import NotFoundException as DomainNotFoundException
 
 # Configuration du logging centralisée
 setup_logging(

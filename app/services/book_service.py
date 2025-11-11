@@ -1,6 +1,6 @@
 # logique métier (utilise le repo)
-from app.core.exceptions import ConflictException, NotFoundException
 from app.domain.entities import BookEntity
+from app.domain.exceptions import ConflictException, NotFoundException
 from app.domain.repositories import IBookRepository, ICacheService
 from app.domain.unit_of_work import IUnitOfWork
 from app.domain.value_objects import BookCreateData, BookUpdateData, PaginatedResult, PaginationParams
@@ -23,7 +23,9 @@ class BookService:
         self.uow = uow
         self.cache = cache
 
-    async def list_books_by_page(self, page: int = 1, size: int = 10) -> PaginatedResult[BookEntity]:
+    async def list_books_by_page(
+        self, page: int = 1, size: int = 10
+    ) -> PaginatedResult[BookEntity]:
         """
         Return a paginated list of books with metadata.
 
@@ -73,11 +75,15 @@ class BookService:
             ConflictException: If a book with the same normalized title exists.
         """
         # Create normalized entity for validation
-        book_entity = BookEntity(id=None, title=book_data.title, authors=list(book_data.authors)).normalize()
+        book_entity = BookEntity(
+            id=None, title=book_data.title, authors=list(book_data.authors)
+        ).normalize()
 
         existing_book = await self.repo.get_by_title(book_entity.title)
         if existing_book:
-            raise ConflictException(f"Un livre avec le titre '{book_data.title}' existe déjà.")
+            raise ConflictException(
+                f"Un livre avec le titre '{book_data.title}' existe déjà."
+            )
 
         # Create normalized data for repository
         normalized_data = BookCreateData(
@@ -115,7 +121,9 @@ class BookService:
             normalized_title = book_data.title.strip().title()
             book_with_title = await self.repo.get_by_title(normalized_title)
             if book_with_title and book_with_title.id != book_id:
-                raise ConflictException(f"Un autre livre avec le titre '{book_data.title}' existe déjà.")
+                raise ConflictException(
+                    f"Un autre livre avec le titre '{book_data.title}' existe déjà."
+                )
 
         # Create normalized data for repository
         normalized_data = BookUpdateData(

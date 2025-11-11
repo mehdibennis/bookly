@@ -15,7 +15,9 @@ def test_author_create_invalid_date_raises_validation_error():
 def test_author_create_completely_invalid_date():
     """Test completely invalid date string in AuthorCreate."""
     with pytest.raises(ValidationError, match="ne correspond à aucun format accepté"):
-        AuthorCreate(first_name="Test", last_name="Author", birth_date="not-a-date-at-all")
+        AuthorCreate(
+            first_name="Test", last_name="Author", birth_date="not-a-date-at-all"
+        )
 
 
 def test_author_update_invalid_date_raises_validation_error():

@@ -1,9 +1,10 @@
 # logique métier (utilise le repo)
 # Cache redis à ajouter ici
 import logging
+from typing import Any
 
-from app.core.exceptions import ConflictException, NotFoundException
 from app.domain.entities import AuthorEntity
+from app.domain.exceptions import ConflictException, NotFoundException
 from app.domain.repositories import IAuthorRepository, ICacheService
 from app.domain.unit_of_work import IUnitOfWork
 from app.domain.value_objects import AuthorCreateData, AuthorUpdateData
@@ -21,42 +22,30 @@ class AuthorService:
     - Delegation to repository under a Unit of Work
     """
 
-    def __init__(self, repo: IAuthorRepository, uow: IUnitOfWork, cache: ICacheService | None = None):
+    def __init__(
+        self,
+        repo: IAuthorRepository,
+        uow: IUnitOfWork,
+        cache: ICacheService | None = None,
+    ):
         self.repo = repo
         self.uow = uow
+        # cache attribute typed as ICacheService for static typing compatibility
+        self.cache: ICacheService
         # Cache is injected to avoid concrete infra dependency in the service
         # Provide a no-op in-memory cache when none is supplied to keep tests simple.
         if cache is None:
+            # Use centralized NoopCache when no cache implementation is provided
+            from app.core.noop_cache import NoopCache
 
-            class _NoopCache:
-                async def connect(self):  # pragma: no cover
-                    return None
-
-                async def close(self):  # pragma: no cover
-                    return None
-
-                async def get_authors_page(self, page: int, size: int):  # pragma: no cover
-                    return None
-
-                async def set_authors_page(self, page: int, size: int, result):  # pragma: no cover
-                    return None
-
-                async def invalidate_authors_cache(self):  # pragma: no cover
-                    return None
-
-                # Support search variants used by the service
-                async def get_authors_page_search(self, page: int, size: int, search: str):  # pragma: no cover
-                    return None
-
-                async def set_authors_page_search(self, page: int, size: int, search: str, result):  # pragma: no cover
-                    return None
-
-            self.cache = _NoopCache()
+            self.cache = NoopCache()
         else:
             self.cache = cache
         self._logger = logging.getLogger(__name__)
 
-    async def list_authors_by_page(self, page: int = 1, size: int = 10, search: str | None = None):
+    async def list_authors_by_page(
+        self, page: int = 1, size: int = 10, search: str | None = None
+    ):
         """
         Return a paginated list of authors with metadata.
 
@@ -91,26 +80,14 @@ class AuthorService:
         pagination = PaginationParams(page=page, size=size)
         result = await self.repo.get_paginated(pagination, search=search)
 
-        # Return domain result - let API layer handle serialization
-        response = {
-            "data": result.data,
-            "meta": {
-                "total": result.meta.total,
-                "page": result.meta.page,
-                "size": result.meta.size,
-                "count": result.meta.count,
-                "last_page": result.meta.last_page,
-                "next_page": result.meta.next_page,
-                "previous_page": result.meta.previous_page,
-            },
-        }
-        # Cache the response
+        # Cache the domain PaginatedResult and return it. API layer will handle
+        # serialization to response DTOs via mappers.
         if search:
-            await self.cache.set_authors_page_search(page, size, search, response)
+            await self.cache.set_authors_page_search(page, size, search, result)
         else:
-            await self.cache.set_authors_page(page, size, response)
+            await self.cache.set_authors_page(page, size, result)
         await self.cache.close()
-        return response
+        return result
 
     async def get_author(self, author_id: int) -> AuthorEntity:
         """
@@ -154,7 +131,9 @@ class AuthorService:
         # Check for existing author
         existing_author = await self.repo.get_by_full_name(first_name, last_name)
         if existing_author:
-            raise ConflictException(f"Un auteur avec le nom '{first_name} {last_name}' existe déjà.")
+            raise ConflictException(
+                f"Un auteur avec le nom '{first_name} {last_name}' existe déjà."
+            )
 
         # Create normalized data
         normalized_data = AuthorCreateData(
@@ -170,7 +149,9 @@ class AuthorService:
         async with self.uow:
             return await self.repo.create(normalized_data)
 
-    async def partial_update_author(self, author_id: int, author_in: AuthorUpdateData) -> AuthorEntity:
+    async def partial_update_author(
+        self, author_id: int, author_in: AuthorUpdateData
+    ) -> AuthorEntity:
         """
         Partially update an existing author (PATCH semantic).
         Only updates fields that are explicitly provided in the request.
@@ -193,11 +174,25 @@ class AuthorService:
             raise NotFoundException(f"Author with id={author_id} not found.")
 
         # Validate and normalize provided fields
-        first_name = author_in.first_name.strip().title() if author_in.first_name is not None else None
-        last_name = author_in.last_name.strip().title() if author_in.last_name is not None else None
-        nationality = author_in.nationality.strip().title() if author_in.nationality is not None else None
+        first_name = (
+            author_in.first_name.strip().title()
+            if author_in.first_name is not None
+            else None
+        )
+        last_name = (
+            author_in.last_name.strip().title()
+            if author_in.last_name is not None
+            else None
+        )
+        nationality = (
+            author_in.nationality.strip().title()
+            if author_in.nationality is not None
+            else None
+        )
         bio = author_in.bio.strip() if author_in.bio is not None else None
-        photo_url = author_in.photo_url.strip() if author_in.photo_url is not None else None
+        photo_url = (
+            author_in.photo_url.strip() if author_in.photo_url is not None else None
+        )
 
         # Validate non-empty fields
         if first_name is not None and not first_name:
@@ -207,14 +202,20 @@ class AuthorService:
 
         # Check for name conflicts if name fields are being updated
         if first_name is not None or last_name is not None:
-            check_first = first_name if first_name is not None else existing_author.first_name
-            check_last = last_name if last_name is not None else existing_author.last_name
+            check_first = (
+                first_name if first_name is not None else existing_author.first_name
+            )
+            check_last = (
+                last_name if last_name is not None else existing_author.last_name
+            )
             author_with_name = await self.repo.get_by_full_name(check_first, check_last)
             if author_with_name and author_with_name.id != author_id:
-                raise ConflictException(f"Un autre auteur avec le nom '{check_first} {check_last}' existe déjà.")
+                raise ConflictException(
+                    f"Un autre auteur avec le nom '{check_first} {check_last}' existe déjà."
+                )
 
         # Build dict with only the fields that are provided (not None)
-        update_dict = {}
+        update_dict: dict[str, Any] = {}
         if first_name is not None:
             update_dict["first_name"] = first_name
         if last_name is not None:

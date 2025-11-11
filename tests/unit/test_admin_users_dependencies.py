@@ -10,7 +10,9 @@ from app.schemas.user_admin_schema import UserAdminCreate, UserAdminUpdate, User
 
 
 class DummyUser:
-    def __init__(self, raw_token: str | None = None, roles: set[tuple[str, str]] | None = None):
+    def __init__(
+        self, raw_token: str | None = None, roles: set[tuple[str, str]] | None = None
+    ):
         self.raw_token = raw_token
         self.username = "dummy"
         self._roles = roles or set()
@@ -42,7 +44,9 @@ def test_get_admin_client_uses_service_account_when_secret(monkeypatch):
         return DummyKC(admin_access_token)
 
     monkeypatch.setattr(admin_users, "KeycloakAdmin", ctor)
-    user = DummyUser(raw_token="user-token", roles={("realm-management", "manage-users")})
+    user = DummyUser(
+        raw_token="user-token", roles={("realm-management", "manage-users")}
+    )
 
     # Act
     kc = admin_users.get_admin_client(user)
@@ -171,7 +175,9 @@ async def test_create_user_raises_502_on_client_error():
 
 @pytest.mark.asyncio
 async def test_update_user_raises_502_on_client_error():
-    payload = UserAdminUpdate(email=None, first_name=None, last_name=None, enabled=None, attributes=None)
+    payload = UserAdminUpdate(
+        email=None, first_name=None, last_name=None, enabled=None, attributes=None
+    )
     with pytest.raises(HTTPException) as ei:
         await admin_users.update_user("id", payload, None, KcErroring())
     assert ei.value.status_code == 502

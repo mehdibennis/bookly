@@ -134,7 +134,9 @@ class PaginationMapper:
         return PaginationParams(page=page, size=size)
 
     @staticmethod
-    def result_to_response(domain_result: PaginatedResult[T], mapper_func: Callable[[list[T]], list[D]]) -> PaginatedResponse[D]:
+    def result_to_response(
+        domain_result: PaginatedResult[T], mapper_func: Callable[[list[T]], list[D]]
+    ) -> PaginatedResponse[D]:
         """Convert domain PaginatedResult to API PaginatedResponse.
 
         Args:

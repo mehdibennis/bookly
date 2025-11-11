@@ -32,13 +32,17 @@ def _scan_file_for_forbidden_imports(path: Path) -> list[tuple[int, str]]:
         if isinstance(node, ast.Import):
             for alias in node.names:
                 name = alias.name  # e.g. 'app.core.config'
-                if name.startswith(FORBIDDEN_PREFIX) and not name.startswith(ALLOWED_DOMAIN_PREFIX):
+                if name.startswith(FORBIDDEN_PREFIX) and not name.startswith(
+                    ALLOWED_DOMAIN_PREFIX
+                ):
                     violations.append((node.lineno, name))
 
         elif isinstance(node, ast.ImportFrom):
             module = node.module or ""
             # handle relative imports: skip when module is None or starts with '.'
-            if module.startswith(FORBIDDEN_PREFIX) and not module.startswith(ALLOWED_DOMAIN_PREFIX):
+            if module.startswith(FORBIDDEN_PREFIX) and not module.startswith(
+                ALLOWED_DOMAIN_PREFIX
+            ):
                 violations.append((node.lineno, module))
 
     return violations

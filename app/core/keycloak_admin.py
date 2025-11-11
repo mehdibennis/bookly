@@ -70,12 +70,16 @@ class KeycloakAdmin:
             }
             resp = await client.post(self.token_url, data=data)
             if resp.status_code != 200:
-                raise KeycloakAdminError(f"Echec de récupération du token admin: {resp.status_code} {resp.text}")
+                raise KeycloakAdminError(
+                    f"Echec de récupération du token admin: {resp.status_code} {resp.text}"
+                )
             body = resp.json()
             access_token = body.get("access_token")
             expires_in = int(body.get("expires_in", 0))
             if not access_token:
-                raise KeycloakAdminError("Réponse token invalide: access_token manquant")
+                raise KeycloakAdminError(
+                    "Réponse token invalide: access_token manquant"
+                )
             self._token = access_token
             self._token_expires_at = now + max(expires_in, 60)
             return self._token
@@ -114,13 +118,19 @@ class KeycloakAdmin:
             payload["attributes"] = attributes
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
-            resp = await client.post(f"{self.base_admin}/users", headers=await self._headers(), json=payload)
+            resp = await client.post(
+                f"{self.base_admin}/users", headers=await self._headers(), json=payload
+            )
             if resp.status_code not in (201, 409):
-                raise KeycloakAdminError(f"Echec création utilisateur: {resp.status_code} {resp.text}")
+                raise KeycloakAdminError(
+                    f"Echec création utilisateur: {resp.status_code} {resp.text}"
+                )
             if resp.status_code == 409:
                 user = await self.get_user_by_username(username)
                 if not user:
-                    raise KeycloakAdminError("Conflit: utilisateur existe mais introuvable")
+                    raise KeycloakAdminError(
+                        "Conflit: utilisateur existe mais introuvable"
+                    )
                 user_id = user["id"]
             else:
                 location = resp.headers.get("Location", "")
@@ -128,11 +138,15 @@ class KeycloakAdmin:
                 if not user_id:
                     user = await self.get_user_by_username(username)
                     if not user:
-                        raise KeycloakAdminError("Utilisateur créé mais id non déterminable")
+                        raise KeycloakAdminError(
+                            "Utilisateur créé mais id non déterminable"
+                        )
                     user_id = user["id"]
 
             if password:
-                await self.set_user_password(user_id, password, temporary=temporary_password)
+                await self.set_user_password(
+                    user_id, password, temporary=temporary_password
+                )
 
             return user_id
 
@@ -144,7 +158,9 @@ class KeycloakAdmin:
                 params={"username": username, "exact": "true"},
             )
             if resp.status_code != 200:
-                raise KeycloakAdminError(f"Echec recherche utilisateur: {resp.status_code} {resp.text}")
+                raise KeycloakAdminError(
+                    f"Echec recherche utilisateur: {resp.status_code} {resp.text}"
+                )
             items = resp.json()
             if not items:
                 return None
@@ -152,18 +168,26 @@ class KeycloakAdmin:
 
     async def get_user_by_id(self, user_id: str) -> dict[str, Any] | None:
         async with httpx.AsyncClient(timeout=self.timeout) as client:
-            resp = await client.get(f"{self.base_admin}/users/{user_id}", headers=await self._headers())
+            resp = await client.get(
+                f"{self.base_admin}/users/{user_id}", headers=await self._headers()
+            )
             if resp.status_code == 404:
                 return None
             if resp.status_code != 200:
-                raise KeycloakAdminError(f"Echec récupération utilisateur par id: {resp.status_code} {resp.text}")
+                raise KeycloakAdminError(
+                    f"Echec récupération utilisateur par id: {resp.status_code} {resp.text}"
+                )
             return resp.json()
 
     async def list_users(self) -> list[dict[str, Any]]:
         async with httpx.AsyncClient(timeout=self.timeout) as client:
-            resp = await client.get(f"{self.base_admin}/users", headers=await self._headers())
+            resp = await client.get(
+                f"{self.base_admin}/users", headers=await self._headers()
+            )
             if resp.status_code != 200:
-                raise KeycloakAdminError(f"Echec liste utilisateurs: {resp.status_code} {resp.text}")
+                raise KeycloakAdminError(
+                    f"Echec liste utilisateurs: {resp.status_code} {resp.text}"
+                )
             return resp.json()
 
     async def update_user(
@@ -189,17 +213,29 @@ class KeycloakAdmin:
             payload["attributes"] = attributes
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
-            resp = await client.put(f"{self.base_admin}/users/{user_id}", headers=await self._headers(), json=payload)
+            resp = await client.put(
+                f"{self.base_admin}/users/{user_id}",
+                headers=await self._headers(),
+                json=payload,
+            )
             if resp.status_code not in (204, 200):
-                raise KeycloakAdminError(f"Echec mise à jour utilisateur: {resp.status_code} {resp.text}")
+                raise KeycloakAdminError(
+                    f"Echec mise à jour utilisateur: {resp.status_code} {resp.text}"
+                )
 
     async def delete_user(self, user_id: str) -> None:
         async with httpx.AsyncClient(timeout=self.timeout) as client:
-            resp = await client.delete(f"{self.base_admin}/users/{user_id}", headers=await self._headers())
+            resp = await client.delete(
+                f"{self.base_admin}/users/{user_id}", headers=await self._headers()
+            )
             if resp.status_code not in (204, 200):
-                raise KeycloakAdminError(f"Echec suppression utilisateur: {resp.status_code} {resp.text}")
+                raise KeycloakAdminError(
+                    f"Echec suppression utilisateur: {resp.status_code} {resp.text}"
+                )
 
-    async def set_user_password(self, user_id: str, password: str, *, temporary: bool = False) -> None:
+    async def set_user_password(
+        self, user_id: str, password: str, *, temporary: bool = False
+    ) -> None:
         payload = {"type": "password", "value": password, "temporary": temporary}
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             resp = await client.put(
@@ -208,7 +244,9 @@ class KeycloakAdmin:
                 json=payload,
             )
             if resp.status_code not in (204, 200):
-                raise KeycloakAdminError(f"Echec réinitialisation mot de passe: {resp.status_code} {resp.text}")
+                raise KeycloakAdminError(
+                    f"Echec réinitialisation mot de passe: {resp.status_code} {resp.text}"
+                )
 
     # Token introspection (avec credentials admin)
     async def introspect_token(self, token: str) -> dict[str, Any]:
@@ -220,15 +258,21 @@ class KeycloakAdmin:
             }
             resp = await client.post(self.introspect_url, data=data)
             if resp.status_code != 200:
-                raise KeycloakAdminError(f"Echec introspection token: {resp.status_code} {resp.text}")
+                raise KeycloakAdminError(
+                    f"Echec introspection token: {resp.status_code} {resp.text}"
+                )
             return resp.json()
 
     # /userinfo (avec access token d'un utilisateur)
     async def get_userinfo(self, access_token: str) -> dict[str, Any]:
         async with httpx.AsyncClient(timeout=self.timeout) as client:
-            resp = await client.get(self.userinfo_url, headers={"Authorization": f"Bearer {access_token}"})
+            resp = await client.get(
+                self.userinfo_url, headers={"Authorization": f"Bearer {access_token}"}
+            )
             if resp.status_code == 401:
                 raise KeycloakAdminError("Access token utilisateur invalide ou expiré")
             if resp.status_code != 200:
-                raise KeycloakAdminError(f"Echec appel userinfo: {resp.status_code} {resp.text}")
+                raise KeycloakAdminError(
+                    f"Echec appel userinfo: {resp.status_code} {resp.text}"
+                )
             return resp.json()

@@ -44,17 +44,23 @@ class TestBookCreateData:
 
     def test_zero_author_id_raises_error(self):
         """Author ID of 0 should raise ValueError."""
-        with pytest.raises(ValueError, match="All author IDs must be positive integers"):
+        with pytest.raises(
+            ValueError, match="All author IDs must be positive integers"
+        ):
             BookCreateData(title="Valid", authors=[0])
 
     def test_negative_author_id_raises_error(self):
         """Negative author ID should raise ValueError."""
-        with pytest.raises(ValueError, match="All author IDs must be positive integers"):
+        with pytest.raises(
+            ValueError, match="All author IDs must be positive integers"
+        ):
             BookCreateData(title="Valid", authors=[-1])
 
     def test_mixed_invalid_author_ids_raises_error(self):
         """Mixed valid and invalid author IDs should raise ValueError."""
-        with pytest.raises(ValueError, match="All author IDs must be positive integers"):
+        with pytest.raises(
+            ValueError, match="All author IDs must be positive integers"
+        ):
             BookCreateData(title="Valid", authors=[1, 2, -3])
 
 
@@ -85,12 +91,16 @@ class TestBookUpdateData:
 
     def test_empty_authors_when_provided_raises_error(self):
         """Empty authors list when provided should raise ValueError."""
-        with pytest.raises(ValueError, match="Authors list cannot be empty when provided"):
+        with pytest.raises(
+            ValueError, match="Authors list cannot be empty when provided"
+        ):
             BookUpdateData(authors=[])
 
     def test_invalid_author_id_when_provided_raises_error(self):
         """Invalid author ID when provided should raise ValueError."""
-        with pytest.raises(ValueError, match="All author IDs must be positive integers"):
+        with pytest.raises(
+            ValueError, match="All author IDs must be positive integers"
+        ):
             BookUpdateData(authors=[1, 0])
 
 
@@ -176,12 +186,16 @@ class TestAuthorUpdateData:
 
     def test_empty_first_name_when_provided_raises_error(self):
         """Empty first name when provided should raise ValueError."""
-        with pytest.raises(ValueError, match="First name cannot be empty when provided"):
+        with pytest.raises(
+            ValueError, match="First name cannot be empty when provided"
+        ):
             AuthorUpdateData(first_name="")
 
     def test_whitespace_first_name_when_provided_raises_error(self):
         """Whitespace-only first name when provided should raise ValueError."""
-        with pytest.raises(ValueError, match="First name cannot be empty when provided"):
+        with pytest.raises(
+            ValueError, match="First name cannot be empty when provided"
+        ):
             AuthorUpdateData(first_name="   ")
 
     def test_empty_last_name_when_provided_raises_error(self):

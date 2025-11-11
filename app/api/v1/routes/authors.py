@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_author_service
-from app.api.mappers import AuthorMapper
+from app.api.mappers import AuthorMapper, PaginationMapper
 from app.core.keycloak_auth import get_current_user
 from app.db.session import get_session
 from app.schemas.author_schema import Author, AuthorCreate, AuthorUpdate
@@ -24,7 +24,7 @@ router = APIRouter(prefix="/authors", tags=["authors"])
     **Paramètres de pagination :**
     - `page` : Numéro de la page (>=1)
     - `size` : Nombre d'éléments par page (1-100)
-    
+
     **Exemple de réponse :**
     ```json
     {
@@ -43,22 +43,26 @@ router = APIRouter(prefix="/authors", tags=["authors"])
       }
     }
     ```
-    
+
     **Note :** Cet endpoint est public (pas d'authentification requise).
     """,
     response_description="Liste paginée d'auteurs avec métadonnées de pagination",
 )
 async def list_authors(
     page: int = Query(1, ge=1, description="Numéro de page (>=1)", example=1),
-    size: int = Query(10, ge=1, le=100, description="Taille de page (1-100)", example=10),
+    size: int = Query(
+        10, ge=1, le=100, description="Taille de page (1-100)", example=10
+    ),
     search: str | None = Query(None, description="Filtre texte sur prénom/nom (ILIKE)"),
     session: AsyncSession = Depends(get_session),
     service: AuthorService = Depends(get_author_service),
 ):
     """Récupère la liste paginée des auteurs (pagination page/size), avec filtre optionnel 'search'."""
-    result = await service.list_authors_by_page(page, size, search)
-    result["data"] = [AuthorMapper.entity_to_dto(a) for a in result["data"]]
-    return result  # pragma: no cover
+    domain_result = await service.list_authors_by_page(page, size, search)
+    # Convert domain PaginatedResult -> API PaginatedResponse using mapper
+    return PaginationMapper.result_to_response(
+        domain_result, AuthorMapper.entities_to_dtos
+    )
 
 
 # --- READ ONE ---
@@ -71,7 +75,7 @@ async def list_authors(
     Récupère les détails complets d'un auteur spécifique.
 
     **Authentification requise :** Token JWT valide
-    
+
     **Erreurs possibles :**
     - `401 Unauthorized` : Token manquant ou invalide
     - `404 Not Found` : Auteur inexistant
@@ -101,14 +105,14 @@ async def get_author(
     summary="Créer un nouvel auteur",
     description="""
     Crée un nouvel auteur dans la collection.
-    
+
     **Authentification requise :** Token JWT valide
-    
+
     **Règles de validation :**
     - Le prénom et le nom ne peuvent pas être vides
     - Les noms sont normalisés (capitalisation automatique)
     - Les doublons (même prénom + nom) sont interdits
-    
+
     **Erreurs possibles :**
     - `400 Bad Request` : Données invalides
     - `409 Conflict` : Auteur avec ce nom existe déjà
@@ -138,11 +142,11 @@ async def create_author(
     summary="Mettre à jour partiellement un auteur (PATCH)",
     description="""
     Met à jour partiellement les informations d'un auteur existant.
-    
+
     **Authentification requise :** Token JWT valide
-    
+
     **Mise à jour partielle :** Tous les champs sont optionnels. Seuls les champs fournis seront mis à jour.
-    
+
     **Exemple de requête :**
     ```json
     {
@@ -151,7 +155,7 @@ async def create_author(
     }
     ```
     Les autres champs (last_name, birth_date, etc.) ne seront pas modifiés.
-    
+
     - `401 Unauthorized` : Token manquant ou invalide
     - `404 Not Found` : Auteur inexistant
     - `409 Conflict` : Nom en conflit avec un autre auteur
@@ -183,9 +187,9 @@ async def partial_update_author(
     summary="Supprimer un auteur",
     description="""
     Supprime définitivement un auteur de la collection.
-    
+
     **Authentification requise :** Token JWT valide
-    
+
     **Erreurs possibles :**
     - `404 Not Found` : Auteur inexistant
     """,

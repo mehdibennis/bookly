@@ -7,8 +7,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from app.core.exceptions import ConflictException, NotFoundException
 from app.domain.entities import AuthorEntity
+from app.domain.exceptions import ConflictException, NotFoundException
 from app.domain.value_objects import AuthorUpdateData, PaginatedResult, PaginationMeta
 from app.schemas.author_schema import AuthorCreate
 from app.services.author_service import AuthorService
@@ -52,7 +52,9 @@ def author_service(mock_repo, mock_uow, monkeypatch):
 @pytest.mark.asyncio
 async def test_create_author_success(author_service, mock_repo):
     """Test successful author creation."""
-    author_data = AuthorCreate(first_name="George", last_name="Orwell", nationality="British")
+    author_data = AuthorCreate(
+        first_name="George", last_name="Orwell", nationality="British"
+    )
 
     # Mock repository returns None (no duplicate)
     mock_repo.get_by_full_name.return_value = None
@@ -199,10 +201,10 @@ async def test_list_authors_by_page(author_service, mock_repo):
 
     result = await author_service.list_authors_by_page(page=1, size=2)
 
-    assert len(result["data"]) == 2
-    assert result["meta"]["total"] == 10
-    assert result["meta"]["page"] == 1
-    assert result["meta"]["size"] == 2
+    assert len(result.data) == 2
+    assert result.meta.total == 10
+    assert result.meta.page == 1
+    assert result.meta.size == 2
     # Verify repository was called with correct PaginationParams
     assert mock_repo.get_paginated.called
 
@@ -275,7 +277,9 @@ async def test_partial_update_author_not_found(author_service, mock_repo):
     mock_repo.get_by_id.return_value = None
 
     with pytest.raises(NotFoundException, match="not found"):
-        await author_service.partial_update_author(999, AuthorUpdateData(nationality="Test"))
+        await author_service.partial_update_author(
+            999, AuthorUpdateData(nationality="Test")
+        )
 
 
 @pytest.mark.asyncio
@@ -304,7 +308,9 @@ async def test_partial_update_no_fields(author_service, mock_repo):
 async def test_partial_update_empty_first_name(author_service, mock_repo):
     """Test partial update with empty first name raises ValueError."""
     # Value object validates at creation, so we test the validation directly
-    with pytest.raises(ValueError, match="[Ff]irst name.*cannot be empty|prénom.*ne peut pas être vide"):
+    with pytest.raises(
+        ValueError, match="[Ff]irst name.*cannot be empty|prénom.*ne peut pas être vide"
+    ):
         AuthorUpdateData(first_name="   ")
 
 
@@ -312,7 +318,9 @@ async def test_partial_update_empty_first_name(author_service, mock_repo):
 async def test_partial_update_empty_last_name(author_service, mock_repo):
     """Test partial update with empty last name raises ValueError."""
     # Value object validates at creation, so we test the validation directly
-    with pytest.raises(ValueError, match="[Ll]ast name.*cannot be empty|nom.*ne peut pas être vide"):
+    with pytest.raises(
+        ValueError, match="[Ll]ast name.*cannot be empty|nom.*ne peut pas être vide"
+    ):
         AuthorUpdateData(last_name="")
         await author_service.partial_update_author(1, AuthorUpdateData(last_name="   "))
 
@@ -345,7 +353,9 @@ async def test_partial_update_name_conflict(author_service, mock_repo):
     mock_repo.get_by_full_name.return_value = conflicting_author
 
     with pytest.raises(ConflictException, match="existe déjà"):
-        await author_service.partial_update_author(1, AuthorUpdateData(first_name="Conflict"))
+        await author_service.partial_update_author(
+            1, AuthorUpdateData(first_name="Conflict")
+        )
 
 
 @pytest.mark.asyncio
@@ -366,7 +376,9 @@ async def test_partial_update_normalization(author_service, mock_repo):
     mock_repo.get_by_full_name.return_value = None
     mock_repo.partial_update.return_value = existing_author
 
-    update_data = AuthorUpdateData(first_name="  john  ", nationality="  british  ", bio="  new bio  ")
+    update_data = AuthorUpdateData(
+        first_name="  john  ", nationality="  british  ", bio="  new bio  "
+    )
 
     await author_service.partial_update_author(1, update_data)
 
@@ -448,7 +460,9 @@ async def test_update_author_success(author_service, mock_repo):
         photo_url=None,
     )
 
-    update_data = AuthorUpdateData(first_name="New", nationality="British", birth_date="1900-01-01", bio="Bio")
+    update_data = AuthorUpdateData(
+        first_name="New", nationality="British", birth_date="1900-01-01", bio="Bio"
+    )
 
     await author_service.partial_update_author(1, update_data)
     mock_repo.partial_update.assert_called_once()
@@ -458,7 +472,9 @@ async def test_update_author_success(author_service, mock_repo):
 async def test_update_author_invalid_id(author_service):
     """Update with invalid ID should raise ValueError."""
     with pytest.raises(ValueError, match="ID.*entier positif"):
-        await author_service.partial_update_author(0, AuthorUpdateData(first_name="Test"))
+        await author_service.partial_update_author(
+            0, AuthorUpdateData(first_name="Test")
+        )
 
 
 @pytest.mark.asyncio
@@ -466,14 +482,18 @@ async def test_update_author_not_found(author_service, mock_repo):
     """Update non-existent author should raise NotFoundException."""
     mock_repo.get_by_id.return_value = None
     with pytest.raises(NotFoundException, match="not found"):
-        await author_service.partial_update_author(1, AuthorUpdateData(first_name="Any"))
+        await author_service.partial_update_author(
+            1, AuthorUpdateData(first_name="Any")
+        )
 
 
 @pytest.mark.asyncio
 async def test_update_author_empty_first_name(author_service, mock_repo):
     """Updating with empty first_name should raise ValueError."""
     # Value object validates at creation
-    with pytest.raises(ValueError, match="[Ff]irst name.*cannot be empty|prénom.*ne peut pas être vide"):
+    with pytest.raises(
+        ValueError, match="[Ff]irst name.*cannot be empty|prénom.*ne peut pas être vide"
+    ):
         AuthorUpdateData(first_name="   ")
 
 
@@ -505,14 +525,18 @@ async def test_update_author_name_conflict(author_service, mock_repo):
     mock_repo.partial_update.return_value = existing_author
     mock_repo.get_by_full_name.return_value = conflicting_author
     with pytest.raises(ConflictException, match="existe déjà"):
-        await author_service.partial_update_author(1, AuthorUpdateData(first_name="New"))
+        await author_service.partial_update_author(
+            1, AuthorUpdateData(first_name="New")
+        )
 
 
 @pytest.mark.asyncio
 async def test_update_author_empty_last_name(author_service, mock_repo):
     """Updating with empty last_name should raise ValueError."""
     # Value object validates at creation
-    with pytest.raises(ValueError, match="[Ll]ast name.*cannot be empty|nom.*ne peut pas être vide"):
+    with pytest.raises(
+        ValueError, match="[Ll]ast name.*cannot be empty|nom.*ne peut pas être vide"
+    ):
         AuthorUpdateData(last_name="   ")
 
 
@@ -532,7 +556,9 @@ async def test_partial_update_normalizes_last_name_and_photo(author_service, moc
     mock_repo.get_by_id.return_value = existing_author
     mock_repo.get_by_full_name.return_value = None
     mock_repo.partial_update.return_value = existing_author
-    await author_service.partial_update_author(1, AuthorUpdateData(last_name="  smith  ", photo_url="  http://x  "))
+    await author_service.partial_update_author(
+        1, AuthorUpdateData(last_name="  smith  ", photo_url="  http://x  ")
+    )
     normalized_data = mock_repo.partial_update.call_args[0][1]  # AuthorUpdateData
     assert normalized_data.last_name == "Smith"
     assert normalized_data.photo_url == "http://x"

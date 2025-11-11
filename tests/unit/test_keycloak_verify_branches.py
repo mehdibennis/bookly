@@ -24,7 +24,9 @@ async def test_verify_token_expired_signature(monkeypatch):
 @pytest.mark.asyncio
 async def test_verify_token_jwt_error(monkeypatch):
     monkeypatch.setattr(KeycloakAuth, "get_public_key", lambda self: "PEM")
-    monkeypatch.setattr(jwt, "decode", lambda *a, **k: (_ for _ in ()).throw(JWTError("bad")))
+    monkeypatch.setattr(
+        jwt, "decode", lambda *a, **k: (_ for _ in ()).throw(JWTError("bad"))
+    )
 
     with pytest.raises(UnauthorizedException):
         await keycloak_auth.verify_token("token")

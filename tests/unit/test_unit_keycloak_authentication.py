@@ -94,7 +94,9 @@ class TestKeycloakAuthentication:
     @pytest.mark.asyncio
     async def test_token_verification_failure(self, mock_verify_token):
         """Test token verification failure."""
-        mock_verify_token.side_effect = HTTPException(status_code=401, detail="Invalid token")
+        mock_verify_token.side_effect = HTTPException(
+            status_code=401, detail="Invalid token"
+        )
 
         from app.core.keycloak_auth import keycloak_auth
 
@@ -124,7 +126,9 @@ class TestKeycloakAuthentication:
     @pytest.mark.asyncio
     async def test_user_info_retrieval_failure(self, mock_get_user_info):
         """Test user info retrieval failure."""
-        mock_get_user_info.side_effect = HTTPException(status_code=401, detail="Cannot get user info")
+        mock_get_user_info.side_effect = HTTPException(
+            status_code=401, detail="Cannot get user info"
+        )
 
         from app.core.keycloak_auth import keycloak_auth
 

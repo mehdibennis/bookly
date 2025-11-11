@@ -28,14 +28,18 @@ def test_exceptions_construction():
     ],
 )
 @pytest.mark.asyncio
-async def test_perf_create_n_and_list_under_threshold(n, limit, threshold_s, test_author_id):
+async def test_perf_create_n_and_list_under_threshold(
+    n, limit, threshold_s, test_author_id
+):
     # Lightweight perf check: create n rows and list them in two pages
     async for session in app.dependency_overrides[get_session]():
         repo = BookRepository(session)
         start = time.perf_counter()
 
         for i in range(n):
-            book_entity = BookEntity(id=None, title=f"Perf {i}-{uuid4()}", authors=[test_author_id])
+            book_entity = BookEntity(
+                id=None, title=f"Perf {i}-{uuid4()}", authors=[test_author_id]
+            )
             await repo.create(book_entity)
 
         # List with pagination in 2 pages

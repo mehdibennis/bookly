@@ -70,7 +70,9 @@ def upgrade() -> None:
     op.create_table(
         "book_authors",
         sa.Column("book_id", sa.Integer(), sa.ForeignKey("books.id"), primary_key=True),
-        sa.Column("author_id", sa.Integer(), sa.ForeignKey("authors.id"), primary_key=True),
+        sa.Column(
+            "author_id", sa.Integer(), sa.ForeignKey("authors.id"), primary_key=True
+        ),
     )
 
 

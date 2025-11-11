@@ -19,7 +19,9 @@ class RequestIdMiddleware(BaseHTTPMiddleware):
     - Adds the header to the outgoing response.
     """
 
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
         incoming = request.headers.get("X-Request-ID")
         request_id = incoming or uuid.uuid4().hex[:16]
         token = request_id_var.set(request_id)
@@ -52,7 +54,9 @@ class AccessLogMiddleware(BaseHTTPMiddleware):
     def _is_excluded(self, path: str) -> bool:
         return any(path.startswith(p) for p in self._exclude_paths)
 
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
         start = perf_counter()
 
         # Request metadata
@@ -62,7 +66,9 @@ class AccessLogMiddleware(BaseHTTPMiddleware):
         path = request.url.path
 
         # Évaluer exclusion (ex: /metrics)
-        excluded = self._is_excluded(path) or (path == getattr(config.settings, "METRICS_ENDPOINT", "/metrics"))
+        excluded = self._is_excluded(path) or (
+            path == getattr(config.settings, "METRICS_ENDPOINT", "/metrics")
+        )
 
         # Optionally capture request body (best effort)
         req_body_snippet: str | None = None
@@ -74,7 +80,9 @@ class AccessLogMiddleware(BaseHTTPMiddleware):
                     content_type = request.headers.get("content-type", "")
                     if "application/json" in content_type:
                         try:
-                            req_body_snippet = json.dumps(json.loads(raw.decode("utf-8", errors="ignore")))
+                            req_body_snippet = json.dumps(
+                                json.loads(raw.decode("utf-8", errors="ignore"))
+                            )
                         except Exception:
                             req_body_snippet = raw.decode("utf-8", errors="ignore")
                     else:
@@ -112,9 +120,13 @@ class AccessLogMiddleware(BaseHTTPMiddleware):
                     content_type = response.headers.get("content-type", "")
                     if "application/json" in content_type:
                         try:
-                            resp_body_snippet = json.dumps(json.loads(body_bytes.decode("utf-8", errors="ignore")))
+                            resp_body_snippet = json.dumps(
+                                json.loads(body_bytes.decode("utf-8", errors="ignore"))
+                            )
                         except Exception:
-                            resp_body_snippet = body_bytes.decode("utf-8", errors="ignore")
+                            resp_body_snippet = body_bytes.decode(
+                                "utf-8", errors="ignore"
+                            )
                     else:
                         resp_body_snippet = body_bytes.decode("utf-8", errors="ignore")
             except Exception:
@@ -142,10 +154,18 @@ class AccessLogMiddleware(BaseHTTPMiddleware):
 
         # Log at INFO; elevate to WARNING for 4xx and ERROR for 5xx
         if response.status_code >= 500:
-            self.logger.error("HTTP request", extra={"request_id": request_id_var.get()}, stack_info=False)
+            self.logger.error(
+                "HTTP request",
+                extra={"request_id": request_id_var.get()},
+                stack_info=False,
+            )
             self.logger.error(json.dumps(payload, ensure_ascii=False))
         elif response.status_code >= 400:
-            self.logger.warning("HTTP request", extra={"request_id": request_id_var.get()}, stack_info=False)
+            self.logger.warning(
+                "HTTP request",
+                extra={"request_id": request_id_var.get()},
+                stack_info=False,
+            )
             self.logger.warning(json.dumps(payload, ensure_ascii=False))
         else:
             self.logger.info(json.dumps(payload, ensure_ascii=False))

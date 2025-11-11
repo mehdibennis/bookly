@@ -50,7 +50,9 @@ async def test_get_current_user_verify_failure(monkeypatch):
     monkeypatch.setattr(keycloak_auth, "keycloak_openid", Dummy())
 
     # Mock JWT decode to raise JWTError (invalid signature)
-    with patch("app.core.keycloak_auth.jwt.decode", side_effect=JWTError("Invalid signature")):
+    with patch(
+        "app.core.keycloak_auth.jwt.decode", side_effect=JWTError("Invalid signature")
+    ):
 
         class Creds:
             credentials = "bad_token"

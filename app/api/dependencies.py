@@ -27,39 +27,10 @@ async def get_cache_service() -> ICacheService:
     import os
 
     if os.getenv("PYTEST_XDIST_WORKER"):
+        # Use centralized NoopCache implementation to avoid duplication
+        from app.core.noop_cache import NoopCache
 
-        class _NoopCache(ICacheService):
-            async def connect(self) -> None:
-                return None
-
-            async def close(self) -> None:
-                return None
-
-            async def get_books_page(self, page: int, size: int):
-                return None
-
-            async def set_books_page(self, page: int, size: int, result):
-                return None
-
-            async def invalidate_books_cache(self) -> None:
-                return None
-
-            async def get_authors_page(self, page: int, size: int):
-                return None
-
-            async def set_authors_page(self, page: int, size: int, result):
-                return None
-
-            async def invalidate_authors_cache(self) -> None:
-                return None
-
-            async def get_authors_page_search(self, page: int, size: int, search: str):
-                return None
-
-            async def set_authors_page_search(self, page: int, size: int, search: str, result):
-                return None
-
-        return _NoopCache()
+        return NoopCache()
 
     return RedisCacheService(settings.REDIS_URL)
 
@@ -72,7 +43,9 @@ async def get_book_service(session: AsyncSession = Depends(get_session)) -> Book
     return BookService(repo, uow, cache)
 
 
-async def get_author_service(session: AsyncSession = Depends(get_session)) -> AuthorService:
+async def get_author_service(
+    session: AsyncSession = Depends(get_session),
+) -> AuthorService:
     """Get configured author service with all dependencies."""
     repo = AuthorRepository(session)
     uow = SqlAlchemyUnitOfWork(session)

@@ -56,7 +56,9 @@ def get_auth_headers(token: str | None = None) -> dict:
     return {"Authorization": f"Bearer {token}"}
 
 
-def get_rate_limit_headers(token: str | None = None, ip_suffix: int | None = None) -> dict:
+def get_rate_limit_headers(
+    token: str | None = None, ip_suffix: int | None = None
+) -> dict:
     """Get headers with rate limiting IP for testing."""
     if token is None:
         token = get_mock_token()
@@ -68,7 +70,9 @@ def get_rate_limit_headers(token: str | None = None, ip_suffix: int | None = Non
     }
 
 
-def get_unique_rate_headers(ip_range: str = "198.51.100", token: str | None = None) -> dict:
+def get_unique_rate_headers(
+    ip_range: str = "198.51.100", token: str | None = None
+) -> dict:
     """Get headers with unique rate limiting IP for testing different ranges."""
     if token is None:
         token = get_mock_token()
@@ -122,7 +126,9 @@ async def client():
             cursor.execute(f"SET search_path TO {settings.TEST_SCHEMA}")
             cursor.close()
 
-    TestSessionLocal = sessionmaker(bind=test_engine, class_=AsyncSession, expire_on_commit=False)
+    TestSessionLocal = sessionmaker(
+        bind=test_engine, class_=AsyncSession, expire_on_commit=False
+    )
 
     async def override_get_session():
         async with TestSessionLocal() as session:
@@ -130,7 +136,9 @@ async def client():
             worker = os.getenv("PYTEST_XDIST_WORKER")
             if worker:
                 try:
-                    await session.execute(text(f"SET search_path TO {settings.TEST_SCHEMA}"))
+                    await session.execute(
+                        text(f"SET search_path TO {settings.TEST_SCHEMA}")
+                    )
                 except Exception:
                     # best-effort; tests should proceed even if we can't set search_path here
                     pass
@@ -148,7 +156,9 @@ async def client():
 
     app.dependency_overrides[get_current_user] = lambda: _DummyUser()
     transport = ASGITransport(app=app, raise_app_exceptions=False)
-    async with AsyncClient(transport=transport, base_url="http://test", follow_redirects=True) as ac:
+    async with AsyncClient(
+        transport=transport, base_url="http://test", follow_redirects=True
+    ) as ac:
         yield ac
     # Restore previous get_session override if any
     if _prev_get_session is not None:
@@ -230,8 +240,12 @@ async def cleanup_db():
     try:
         async with engine.begin() as conn:
             try:
-                await conn.execute(text("TRUNCATE TABLE books RESTART IDENTITY CASCADE"))
-                await conn.execute(text("TRUNCATE TABLE authors RESTART IDENTITY CASCADE"))
+                await conn.execute(
+                    text("TRUNCATE TABLE books RESTART IDENTITY CASCADE")
+                )
+                await conn.execute(
+                    text("TRUNCATE TABLE authors RESTART IDENTITY CASCADE")
+                )
             except Exception as e:
                 # Log but do not fail the test teardown
                 logging.getLogger(__name__).warning("DB cleanup error: %s", e)
@@ -260,14 +274,18 @@ async def override_db_session_for_all_tests():
             cursor.execute(f"SET search_path TO {settings.TEST_SCHEMA}")
             cursor.close()
 
-    TestSessionLocal = sessionmaker(bind=test_engine, class_=AsyncSession, expire_on_commit=False)
+    TestSessionLocal = sessionmaker(
+        bind=test_engine, class_=AsyncSession, expire_on_commit=False
+    )
 
     async def override_get_session():
         async with TestSessionLocal() as session:
             worker = os.getenv("PYTEST_XDIST_WORKER")
             if worker:
                 try:
-                    await session.execute(text(f"SET search_path TO {settings.TEST_SCHEMA}"))
+                    await session.execute(
+                        text(f"SET search_path TO {settings.TEST_SCHEMA}")
+                    )
                 except Exception:
                     pass
             yield session

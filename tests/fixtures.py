@@ -28,9 +28,13 @@ def mock_book_repository():
     repo.get_by_title.return_value = None
     repo.create.return_value = BookEntity(id=1, title="Test Book", authors=[1])
     repo.update.return_value = BookEntity(id=1, title="Updated Book", authors=[1])
-    repo.partial_update.return_value = BookEntity(id=1, title="Patched Book", authors=[1])
+    repo.partial_update.return_value = BookEntity(
+        id=1, title="Patched Book", authors=[1]
+    )
     repo.delete.return_value = True
-    repo.get_paginated.return_value = PaginatedResult(data=[], meta=PaginationMeta(total=0, page=1, size=10, count=0))
+    repo.get_paginated.return_value = PaginatedResult(
+        data=[], meta=PaginationMeta(total=0, page=1, size=10, count=0)
+    )
 
     return repo
 
@@ -45,9 +49,13 @@ def mock_author_repository():
     repo.get_by_full_name.return_value = None
     repo.create.return_value = AuthorEntity(id=1, first_name="John", last_name="Doe")
     repo.update.return_value = AuthorEntity(id=1, first_name="Updated", last_name="Doe")
-    repo.partial_update.return_value = AuthorEntity(id=1, first_name="Patched", last_name="Doe")
+    repo.partial_update.return_value = AuthorEntity(
+        id=1, first_name="Patched", last_name="Doe"
+    )
     repo.delete.return_value = True
-    repo.get_paginated.return_value = PaginatedResult(data=[], meta=PaginationMeta(total=0, page=1, size=10, count=0))
+    repo.get_paginated.return_value = PaginatedResult(
+        data=[], meta=PaginationMeta(total=0, page=1, size=10, count=0)
+    )
 
     return repo
 

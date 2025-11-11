@@ -62,19 +62,25 @@ class TestAuthorEntity:
 
     def test_normalize_nationality(self):
         """Normalize should title-case and strip nationality."""
-        author = AuthorEntity(id=1, first_name="John", last_name="Doe", nationality="  france  ")
+        author = AuthorEntity(
+            id=1, first_name="John", last_name="Doe", nationality="  france  "
+        )
         author.normalize()
         assert author.nationality == "France"
 
     def test_normalize_nationality_none(self):
         """Normalize should handle None nationality."""
-        author = AuthorEntity(id=1, first_name="John", last_name="Doe", nationality=None)
+        author = AuthorEntity(
+            id=1, first_name="John", last_name="Doe", nationality=None
+        )
         author.normalize()
         assert author.nationality is None
 
     def test_normalize_bio(self):
         """Normalize should strip bio whitespace."""
-        author = AuthorEntity(id=1, first_name="John", last_name="Doe", bio="  Test bio  ")
+        author = AuthorEntity(
+            id=1, first_name="John", last_name="Doe", bio="  Test bio  "
+        )
         author.normalize()
         assert author.bio == "Test bio"
 
@@ -86,7 +92,9 @@ class TestAuthorEntity:
 
     def test_normalize_photo_url(self):
         """Normalize should strip photo_url whitespace."""
-        author = AuthorEntity(id=1, first_name="John", last_name="Doe", photo_url="  http://example.com  ")
+        author = AuthorEntity(
+            id=1, first_name="John", last_name="Doe", photo_url="  http://example.com  "
+        )
         author.normalize()
         assert author.photo_url == "http://example.com"
 

@@ -64,7 +64,9 @@ async def test_update_book_not_found():
         from app.domain.value_objects import BookUpdateData
 
         with pytest.raises(Exception) as exc:
-            await service.update_book(99999999, book_data=BookUpdateData(title=None, authors=None))
+            await service.update_book(
+                99999999, book_data=BookUpdateData(title=None, authors=None)
+            )
         assert "not found" in str(exc.value).lower()
 
 

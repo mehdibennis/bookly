@@ -8,9 +8,9 @@ from fastapi.responses import JSONResponse
 
 from app.core.config import settings
 from app.core.exceptions import AppException
-from app.core.exceptions import ConflictException as DomainConflictException
-from app.core.exceptions import NotFoundException as DomainNotFoundException
 from app.core.logging_config import request_id_var
+from app.domain.exceptions import ConflictException as DomainConflictException
+from app.domain.exceptions import NotFoundException as DomainNotFoundException
 
 # Configuration du logger
 logger = logging.getLogger(__name__)
@@ -42,7 +42,9 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         if error["type"] == "missing":
             message = f"Le champ '{error['loc'][-1]}' est requis."
         elif error["type"] == "string_type":  # pragma: no cover - rarely hit exactly
-            message = f"Le champ '{error['loc'][-1]}' doit être une chaîne de caractères."
+            message = (
+                f"Le champ '{error['loc'][-1]}' doit être une chaîne de caractères."
+            )
         elif error["type"] == "int_parsing":
             message = f"Le champ '{error['loc'][-1]}' doit être un nombre entier."
         else:
@@ -68,7 +70,9 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
                 "type": error.get("type"),
                 "loc": error.get("loc"),
                 "msg": error.get("msg"),
-                "input": str(error.get("input")) if error.get("input") is not None else None,
+                "input": (
+                    str(error.get("input")) if error.get("input") is not None else None
+                ),
             }
             # Ajouter ctx seulement si disponible et convertir les valeurs non-serializable
             if "ctx" in error and error["ctx"]:

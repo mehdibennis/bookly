@@ -64,7 +64,9 @@ class KeycloakAuth:
                 },
             )
 
-            logger.info(f"Token verified successfully for user: {token_info.get('preferred_username')}")
+            logger.info(
+                f"Token verified successfully for user: {token_info.get('preferred_username')}"
+            )
             return token_info
 
         except ExpiredSignatureError:
@@ -84,7 +86,9 @@ class KeycloakAuth:
             return user_info
         except Exception as e:  # pragma: no cover - external dependency failure
             logger.warning(f"Failed to get user info: {e}")
-            raise UnauthorizedException("Impossible de récupérer les informations utilisateur")
+            raise UnauthorizedException(
+                "Impossible de récupérer les informations utilisateur"
+            )
 
 
 # Global instance

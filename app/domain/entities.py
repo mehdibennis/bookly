@@ -18,7 +18,9 @@ class AuthorEntity:
     def normalize(self):
         self.first_name = self.first_name.strip().title()
         self.last_name = self.last_name.strip().title()
-        self.nationality = self.nationality.strip().title() if self.nationality else None
+        self.nationality = (
+            self.nationality.strip().title() if self.nationality else None
+        )
         self.bio = self.bio.strip() if self.bio else None
         self.photo_url = self.photo_url.strip() if self.photo_url else None
         return self

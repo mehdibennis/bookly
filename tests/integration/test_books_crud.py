@@ -70,7 +70,9 @@ class TestBooksCrud:
         b = rb.json()
 
         # Try to set B's title to A's
-        r = await client.put(f"/api/v1/books/{b['id']}", json={"title": title_a}, headers=headers)
+        r = await client.put(
+            f"/api/v1/books/{b['id']}", json={"title": title_a}, headers=headers
+        )
         assert r.status_code == 409
 
     @pytest.mark.asyncio

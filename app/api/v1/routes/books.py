@@ -18,11 +18,11 @@ router = APIRouter(prefix="/books", tags=["books"])
     summary="Liste paginée des livres",
     description="""
     Récupère la liste complète des livres avec pagination.
-    
+
     **Paramètres de pagination :**
     - `page` : Numéro de la page (>=1)
     - `size` : Nombre d'éléments par page (1-100)
-    
+
     **Exemple de réponse :**
     ```json
     {
@@ -40,14 +40,16 @@ router = APIRouter(prefix="/books", tags=["books"])
       }
     }
     ```
-    
+
     **Note :** Cet endpoint est public (pas d'authentification requise).
     """,
     response_description="Liste paginée de livres avec métadonnées de pagination",
 )
 async def list_books(
     page: int = Query(1, ge=1, description="Numéro de page (>=1)", example=1),
-    size: int = Query(10, ge=1, le=100, description="Taille de page (1-100)", example=10),
+    size: int = Query(
+        10, ge=1, le=100, description="Taille de page (1-100)", example=10
+    ),
     book_service: BookService = Depends(get_book_service),
 ):
     """Récupère la liste paginée des livres (pagination page/size)."""
@@ -66,9 +68,9 @@ async def list_books(
     summary="Récupérer un livre par ID",
     description="""
     Récupère les détails complets d'un livre spécifique.
-    
+
     **Authentification requise :** Token JWT valide
-    
+
     **Erreurs possibles :**
     - `401 Unauthorized` : Token manquant ou invalide
     - `404 Not Found` : Livre inexistant
@@ -97,14 +99,14 @@ async def get_book(
     summary="Créer un nouveau livre",
     description="""
     Crée un nouveau livre dans la collection.
-    
+
     **Authentification requise :** Token JWT valide
-    
+
     **Règles de validation :**
     - Le titre et l'auteur ne peuvent pas être vides
     - Le titre est normalisé (capitalisation automatique)
     - Les titres en double sont interdits
-    
+
     **Erreurs possibles :**
     - `400 Bad Request` : Données invalides
     - `409 Conflict` : Livre avec ce titre existe déjà
@@ -134,11 +136,11 @@ async def create_book(
     summary="Mettre à jour un livre",
     description="""
     Met à jour les informations d'un livre existant.
-    
+
     **Authentification requise :** Token JWT valide
-    
+
     **Mise à jour partielle :** Tous les champs sont optionnels.
-    
+
     **Erreurs possibles :**
     - `404 Not Found` : Livre inexistant
     - `409 Conflict` : Titre en conflit avec un autre livre
@@ -193,9 +195,9 @@ async def patch_book(
     summary="Supprimer un livre",
     description="""
     Supprime définitivement un livre de la collection.
-    
+
     **Authentification requise :** Token JWT valide
-    
+
     **Erreurs possibles :**
     - `404 Not Found` : Livre inexistant
     """,
