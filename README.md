@@ -2,7 +2,7 @@
 
 > **API REST moderne** construite avec FastAPI, PostgreSQL, Redis et Keycloak
 
-[![Tests](https://img.shields.io/badge/tests-129%20passing-success)]()
+[![Tests](https://img.shields.io/badge/tests-302%20passing-success)]()
 [![Coverage](https://img.shields.io/badge/coverage-99.78%25-brightgreen)]()
 [![Python](https://img.shields.io/badge/python-3.12-blue)]()
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688)]()
@@ -53,7 +53,7 @@ bookly/
 
 **Métriques:**
 - **Coverage:** 99.78%
-- **Tests:** 129 passants
+- **Tests:** 302 passants
 - **Temps d'exécution:** ~60s (parallèle)
 
 ### Lancer les tests
@@ -88,14 +88,14 @@ docker compose run --rm web pytest -v
 
 ### Fonctionnalités techniques
 
-✅ **Authentification** : Keycloak OIDC
-✅ **Cache** : Redis pour les listes paginées
-✅ **Rate Limiting** : slowapi (IP-based)
-✅ **Validation** : Pydantic v2
-✅ **ORM** : SQLAlchemy 2.0 (async)
-✅ **Admin** : SQLAdmin (en cours)
-✅ **Logs** : Structurés avec UUID de requête
-✅ **Tests** : pytest-asyncio + pytest-xdist
+- ✅ **Authentification** : Keycloak OIDC
+- ✅ **Cache** : Redis pour les listes paginées
+- ✅ **Rate Limiting** : slowapi (IP-based)
+- ✅ **Validation** : Pydantic v2
+- ✅ **ORM** : SQLAlchemy 2.0 (async)
+- ✅ **Admin** : SQLAdmin (en cours)
+- ✅ **Logs** : Structurés avec UUID de requête
+- ✅ **Tests** : pytest-asyncio + pytest-xdist
 
 ## 🛠️ Développement
 
@@ -204,7 +204,7 @@ Ouvrir une issue sur GitHub avec :
 
 **Standards:**
 - Coverage ≥ 98%
-- Tests passants (314/314)
+- Tests passants (302/302)
 - Black + isort pour formatting
 - Type hints complets
 
