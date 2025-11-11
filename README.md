@@ -88,14 +88,14 @@ docker compose run --rm web pytest -v
 
 ### Fonctionnalités techniques
 
-✅ **Authentification** : Keycloak OIDC  
-✅ **Cache** : Redis pour les listes paginées  
-✅ **Rate Limiting** : slowapi (IP-based)  
-✅ **Validation** : Pydantic v2  
-✅ **ORM** : SQLAlchemy 2.0 (async)  
-✅ **Admin** : SQLAdmin (en cours)  
-✅ **Logs** : Structurés avec UUID de requête  
-✅ **Tests** : pytest-asyncio + pytest-xdist  
+✅ **Authentification** : Keycloak OIDC
+✅ **Cache** : Redis pour les listes paginées
+✅ **Rate Limiting** : slowapi (IP-based)
+✅ **Validation** : Pydantic v2
+✅ **ORM** : SQLAlchemy 2.0 (async)
+✅ **Admin** : SQLAdmin (en cours)
+✅ **Logs** : Structurés avec UUID de requête
+✅ **Tests** : pytest-asyncio + pytest-xdist
 
 ## 🛠️ Développement
 

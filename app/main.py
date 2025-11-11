@@ -42,9 +42,9 @@ app = FastAPI(
     version="1.0.0",
     description="""
     **Bookly** est une API REST moderne pour la gestion de livres avec authentification Keycloak.
-    
+
     ## Fonctionnalités principales
-    
+
     * **Authentification sécurisée** : Intégration Keycloak pour JWT et gestion des rôles
     * **CRUD complet** : Création, lecture, mise à jour et suppression de livres
     * **Pagination intelligente** : Navigation efficace dans les collections
@@ -52,16 +52,16 @@ app = FastAPI(
     * **Rate limiting** : Protection contre les abus (SlowAPI)
     * **Validation robuste** : Pydantic pour la validation des données
     * **Gestion d'erreurs centralisée** : Handlers personnalisés pour toutes les exceptions
-    
+
     ## Architecture
-    
+
     * **Domain-Driven Design** : Séparation claire entre domaine, services, repositories
     * **Unit of Work Pattern** : Gestion transactionnelle cohérente
     * **Async/Await** : Performance maximale avec SQLAlchemy async
     * **Tests exhaustifs** : 99% de couverture de code
-    
+
     ## Démarrage rapide
-    
+
     1. Obtenez un token JWT depuis votre serveur Keycloak
     2. Utilisez le token dans le header `Authorization: Bearer <token>`
     3. Explorez les endpoints de gestion des livres sous `/api/v1/books/` et auteurs sous `/api/v1/authors/`
@@ -104,7 +104,9 @@ limiter = Limiter(key_func=rate_limit_key)
 # Throttling
 app.state.limiter = limiter
 HandlerType = Callable[[Request, Exception], Response | Awaitable[Response]]
-app.add_exception_handler(RateLimitExceeded, cast(HandlerType, _rate_limit_exceeded_handler))
+app.add_exception_handler(
+    RateLimitExceeded, cast(HandlerType, _rate_limit_exceeded_handler)
+)
 app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(RequestIdMiddleware)
 if config.settings.LOG_ACCESS:
@@ -115,7 +117,11 @@ app.include_router(authors.router, prefix="/api/v1", tags=["authors"])
 app.include_router(users.router, prefix="/api/v1", tags=["users"])
 
 # Observability (optional)
-setup_prometheus(app, enabled=config.settings.ENABLE_METRICS, endpoint=config.settings.METRICS_ENDPOINT)
+setup_prometheus(
+    app,
+    enabled=config.settings.ENABLE_METRICS,
+    endpoint=config.settings.METRICS_ENDPOINT,
+)
 setup_tracing(
     app,
     enabled=config.settings.ENABLE_TRACING,
@@ -133,10 +139,18 @@ setup_sentry(
 )
 
 # Handlers globaux pour une gestion d'erreurs cohérente
-app.add_exception_handler(RequestValidationError, cast(HandlerType, validation_exception_handler))  # 422
-app.add_exception_handler(AppException, cast(HandlerType, app_exception_handler))  # 409, 404
-app.add_exception_handler(DomainNotFoundException, cast(HandlerType, domain_not_found_handler))
-app.add_exception_handler(DomainConflictException, cast(HandlerType, domain_conflict_handler))
+app.add_exception_handler(
+    RequestValidationError, cast(HandlerType, validation_exception_handler)
+)  # 422
+app.add_exception_handler(
+    AppException, cast(HandlerType, app_exception_handler)
+)  # 409, 404
+app.add_exception_handler(
+    DomainNotFoundException, cast(HandlerType, domain_not_found_handler)
+)
+app.add_exception_handler(
+    DomainConflictException, cast(HandlerType, domain_conflict_handler)
+)
 app.add_exception_handler(ValueError, cast(HandlerType, value_error_handler))  # 400
 app.add_exception_handler(Exception, generic_exception_handler)  # 500
 
