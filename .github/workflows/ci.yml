@@ -2,6 +2,14 @@ name: CI
 
 on: [push, pull_request]
 
+# Grant the workflow explicit permissions needed to post PR comments.
+# Note: this won't allow writing comments for workflows triggered from forks
+# (see README notes below). If you need comments for fork PRs, use
+# `pull_request_target` or a bot token with caution.
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -78,3 +86,37 @@ jobs:
           fail_ci_if_error: false
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Post coverage summary to PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const xmlPath = 'coverage.xml';
+            let pct = 'N/A';
+            if (fs.existsSync(xmlPath)) {
+              const xml = fs.readFileSync(xmlPath, 'utf8');
+              const m = xml.match(/line-rate="([0-9.]+)"/);
+              if (m) pct = (parseFloat(m[1]) * 100).toFixed(2) + '%';
+            }
+            const { owner, repo } = context.repo;
+            const pr = context.payload.pull_request && context.payload.pull_request.number;
+            if (!pr) {
+              core.info('No pull request found; skipping coverage comment.');
+              return;
+            }
+
+            // Marker to identify the bot's comment so we update instead of creating duplicates
+            const MARKER = '<!-- codecov-summary -->';
+            const body = `${MARKER}\nCodecov summary for this PR: **${pct}**\n\n![Codecov sunburst](https://codecov.io/github/${owner}/${repo}/graphs/sunburst.svg)\n\nFull report: https://codecov.io/gh/${owner}/${repo}`;
+
+            // List existing comments on the PR and find one with our marker.
+            const comments = await github.rest.issues.listComments({ owner, repo, issue_number: pr });
+            const existing = comments.data.find(c => c.body && c.body.includes(MARKER));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number: pr, body });
+            }
