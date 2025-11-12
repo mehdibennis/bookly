@@ -3,7 +3,12 @@ from uuid import uuid4
 
 import pytest
 
-from app.core.exceptions import AppException, ConflictException, NotFoundException, UnauthorizedException
+from app.core.exceptions import (
+    AppException,
+    ConflictException,
+    NotFoundException,
+    UnauthorizedException,
+)
 from app.db.session import get_session
 from app.domain.entities import BookEntity
 from app.main import app

@@ -1,4 +1,9 @@
-from app.core.exceptions import AppException, ConflictException, NotFoundException, UnauthorizedException
+from app.core.exceptions import (
+    AppException,
+    ConflictException,
+    NotFoundException,
+    UnauthorizedException,
+)
 
 
 def test_exceptions_construction():

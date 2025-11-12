@@ -26,7 +26,12 @@ def setup_prometheus(
     try:
         import time
 
-        from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, exposition
+        from prometheus_client import (
+            CONTENT_TYPE_LATEST,
+            Counter,
+            Histogram,
+            exposition,
+        )
     except Exception:
         # Optional dependency: do not fail when prometheus_client isn't present
         return None
