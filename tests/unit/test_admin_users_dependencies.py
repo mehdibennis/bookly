@@ -6,11 +6,7 @@ from fastapi import HTTPException
 from app.api.v1.routes import admin_users
 from app.core.config import settings
 from app.core.keycloak_admin import KeycloakAdminError
-from app.schemas.user_admin_schema import (
-    UserAdminCreate,
-    UserAdminUpdate,
-    UserPasswordUpdate,
-)
+from app.schemas.user_admin_schema import UserAdminCreate, UserAdminUpdate, UserPasswordUpdate
 
 
 class DummyUser:

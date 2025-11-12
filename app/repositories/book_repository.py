@@ -10,13 +10,7 @@ from sqlalchemy.orm import selectinload
 from app.db.models.book_model import Book
 from app.domain.entities import BookEntity
 from app.domain.repositories import IBookRepository
-from app.domain.value_objects import (
-    BookCreateData,
-    BookUpdateData,
-    PaginatedResult,
-    PaginationMeta,
-    PaginationParams,
-)
+from app.domain.value_objects import BookCreateData, BookUpdateData, PaginatedResult, PaginationMeta, PaginationParams
 
 _LOGGER = logging.getLogger(__name__)
 

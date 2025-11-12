@@ -7,11 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.core.config import settings
 from app.core.keycloak_admin import KeycloakAdmin, KeycloakAdminError
 from app.core.keycloak_auth import KeycloakUser, get_current_user
-from app.schemas.user_admin_schema import (
-    UserAdminCreate,
-    UserAdminUpdate,
-    UserPasswordUpdate,
-)
+from app.schemas.user_admin_schema import UserAdminCreate, UserAdminUpdate, UserPasswordUpdate
 
 logger = logging.getLogger(__name__)
 
