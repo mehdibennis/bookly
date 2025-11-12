@@ -11,11 +11,6 @@ repos:
         entry: black .
         language: system
         types: [python]
-      - id: isort
-        name: isort
-        entry: isort .
-        language: system
-        types: [python]
       - id: mypy
         name: mypy
         entry: mypy --config-file=mypy.ini
