@@ -2,9 +2,8 @@
 
 > **API REST moderne** construite avec FastAPI, PostgreSQL, Redis et Keycloak
 
-[![Tests](https://img.shields.io/badge/tests-302%20passing-success)]()
-[![Coverage](https://img.shields.io/badge/coverage-99.78%25-brightgreen)]()
-[![Python](https://img.shields.io/badge/python-3.12-blue)]()
+[![codecov](https://codecov.io/github/mehdibennis/bookly/branch/clean_arch_implem/graph/badge.svg?token=CGu5EDQbRu)](https://codecov.io/github/mehdibennis/bookly)
+[![Python](https://img.shields.io/badge/python-3.11-blue)]()
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688)]()
 
 ## 🚀 Démarrage rapide
@@ -214,5 +213,3 @@ Ouvrir une issue sur GitHub avec :
 📧 medi.b@hotmail.com
 
 ---
-
-**Built with ❤️ using FastAPI**
