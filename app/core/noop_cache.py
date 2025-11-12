@@ -1,5 +1,3 @@
-from typing import Any
-
 from app.domain.entities import AuthorEntity, BookEntity
 from app.domain.repositories import ICacheService
 from app.domain.value_objects import PaginatedResult

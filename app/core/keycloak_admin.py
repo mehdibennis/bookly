@@ -28,7 +28,9 @@ class KeycloakAdmin:
         self.client_id = settings.KEYCLOAK_CLIENT_ID
         self.client_secret = settings.KEYCLOAK_CLIENT_SECRET
         self.timeout = timeout
-        self._token: str | None = None
+        # Use empty string for 'no token' to satisfy static typing; runtime checks
+        # treat falsy string as missing token.
+        self._token: str = ""
         self._token_expires_at: float = 0.0
 
         # Optionnel: autoriser l'injection d'un access token (ex: token d'un utilisateur admin)
@@ -82,7 +84,7 @@ class KeycloakAdmin:
                 )
             self._token = access_token
             self._token_expires_at = now + max(expires_in, 60)
-            return self._token
+            return access_token
 
     async def _headers(self) -> dict[str, str]:
         token = await self._ensure_token()

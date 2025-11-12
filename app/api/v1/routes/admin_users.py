@@ -92,7 +92,7 @@ async def create_user(
             email=payload.email,
             first_name=payload.first_name,
             last_name=payload.last_name,
-            enabled=payload.enabled,
+            enabled=payload.enabled if payload.enabled is not None else True,
             password=payload.password,
             # temporary_password=payload.temporary_password,
             # attributes=payload.attributes,

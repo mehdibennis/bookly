@@ -1,6 +1,7 @@
 from uuid import uuid4
 
 import pytest
+
 from conftest import get_auth_headers, get_rate_limit_headers
 
 

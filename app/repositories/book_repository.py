@@ -81,6 +81,7 @@ class BookRepository(IBookRepository):
 
     async def create(self, book_data: BookCreateData) -> BookEntity:
         """Create a new book from domain data."""
+        _LOGGER.info("Creating book: %s", book_data.title)
         # Create the book model
         book = Book(title=book_data.title)
 
@@ -113,7 +114,8 @@ class BookRepository(IBookRepository):
 
         # Update fields if provided
         if book_data.title is not None:
-            book.title = book_data.title
+            # Use setattr to avoid SQLAlchemy/typing mismatch (Column vs attribute)
+            setattr(book, "title", book_data.title)
 
         if book_data.authors is not None:
             from app.db.models.author_model import Author

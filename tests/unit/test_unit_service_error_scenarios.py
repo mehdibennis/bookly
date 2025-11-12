@@ -6,7 +6,6 @@ Covers business logic validation and service-level error handling.
 from uuid import uuid4
 
 import pytest
-from conftest import get_unique_rate_headers
 
 from app.db.session import get_session
 from app.db.unit_of_work import SqlAlchemyUnitOfWork
@@ -16,6 +15,7 @@ from app.domain.value_objects import BookCreateData, BookUpdateData
 from app.main import app
 from app.repositories.book_repository import BookRepository
 from app.services.book_service import BookService
+from conftest import get_unique_rate_headers
 from tests.mocks.cache_service import MockCacheService
 
 

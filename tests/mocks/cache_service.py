@@ -1,8 +1,6 @@
-"""Mock cache service for testing.
+from __future__ import annotations
 
-This provides a simple in-memory cache implementation that can be used
-in tests without requiring Redis infrastructure.
-"""
+from typing import Any
 
 from app.domain.entities import AuthorEntity, BookEntity
 from app.domain.repositories import ICacheService
@@ -10,31 +8,34 @@ from app.domain.value_objects import PaginatedResult
 
 
 class MockCacheService(ICacheService):
-    """In-memory cache service for testing."""
+    """In-memory mock cache implementation used by tests.
 
-    def __init__(self):
-        self._cache = {}
+    The methods and signatures intentionally match `ICacheService` so mypy
+    and pre-commit checks accept the implementation used by tests.
+    """
+
+    def __init__(self) -> None:
+        self._cache: dict[str, Any] = {}
 
     async def connect(self) -> None:
-        """No-op for mock cache."""
-        pass
+        return None
+
+    async def close(self) -> None:
+        return None
 
     async def get_books_page(
         self, page: int, size: int
     ) -> PaginatedResult[BookEntity] | None:
-        """Get cached books page."""
         key = f"books:page:{page}:size:{size}"
         return self._cache.get(key)
 
     async def set_books_page(
-        self, page: int, size: int, result: PaginatedResult[BookEntity]
+        self, page: int, size: int, result: PaginatedResult[BookEntity] | dict[str, Any]
     ) -> None:
-        """Cache books page."""
         key = f"books:page:{page}:size:{size}"
         self._cache[key] = result
 
     async def invalidate_books_cache(self) -> None:
-        """Invalidate all books cache."""
         self._cache = {
             k: v for k, v in self._cache.items() if not k.startswith("books:page:")
         }
@@ -42,19 +43,41 @@ class MockCacheService(ICacheService):
     async def get_authors_page(
         self, page: int, size: int
     ) -> PaginatedResult[AuthorEntity] | None:
-        """Get cached authors page."""
         key = f"authors:page:{page}:size:{size}"
         return self._cache.get(key)
 
     async def set_authors_page(
-        self, page: int, size: int, result: PaginatedResult[AuthorEntity]
+        self,
+        page: int,
+        size: int,
+        result: PaginatedResult[AuthorEntity] | dict[str, Any],
     ) -> None:
-        """Cache authors page."""
         key = f"authors:page:{page}:size:{size}"
         self._cache[key] = result
 
+    # Backwards-compatible search variants required by tests that were added
+    # while the cache contract evolved. Provide permissive signatures so
+    # test code and older mocks continue to work without mypy errors.
+    async def get_authors_page_search(
+        self, page: int, size: int, search: str
+    ) -> PaginatedResult[AuthorEntity] | None:
+        # naive search over cached authors pages
+        for k, v in self._cache.items():
+            if k.startswith("authors:page:"):
+                return v
+        return None
+
+    async def set_authors_page_search(
+        self,
+        page: int,
+        size: int,
+        search: str,
+        result: PaginatedResult[AuthorEntity] | dict[str, Any],
+    ) -> None:
+        key = f"authors:search:{search}:page:{page}:size:{size}"
+        self._cache[key] = result
+
     async def invalidate_authors_cache(self) -> None:
-        """Invalidate all authors cache."""
         self._cache = {
             k: v for k, v in self._cache.items() if not k.startswith("authors:page:")
         }

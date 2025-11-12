@@ -1,4 +1,5 @@
 import pytest
+
 from conftest import get_mock_token
 
 
