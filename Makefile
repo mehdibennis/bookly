@@ -42,7 +42,7 @@ test-local:
 	# Clear any addopts from pytest.ini (for example '-n auto') to avoid
 	# passing duplicate/unknown -n options to pytest, then disable xdist.
 	# Use an interactive exec (-it) so pytest/ipdb can read from the terminal when
-	POSTGRES_PORT=15432 POSTGRES_HOST=127.0.0.1 POSTGRES_USER=bookly_user POSTGRES_PASSWORD=bookly_pass POSTGRES_DB=bookly_db pytest -n 0 -q $(PYTEST_ARGS)
+	POSTGRES_PORT=15432 POSTGRES_HOST=127.0.0.1 POSTGRES_USER=bookly_user POSTGRES_PASSWORD=bookly_pass POSTGRES_DB=bookly_db REDIS_HOST=127.0.0.1 pytest -n 0 -q $(PYTEST_ARGS)
 
 # ==============================
 # logs
