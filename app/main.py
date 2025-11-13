@@ -179,6 +179,16 @@ async def crash(user=Depends(get_current_user)):
     raise Exception("boom")
 
 
+# --- Root endpoint ---
+@app.get("/", tags=["System"])
+async def root():
+    return {
+        "message": "Welcome to the bookly API!",
+        "version": "1.0.0",
+        "documentation": "/docs",
+        "health": "/health"
+    }
+
 # --- Healthcheck ---
 @app.get("/health", tags=["System"])
 async def health_check():
