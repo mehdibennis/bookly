@@ -11,8 +11,6 @@ from app.schemas.user_admin_schema import (
     UserAdminUpdate,
     UserPasswordUpdate,
 )
-
-
 from tests.helpers import DummyUser
 
 

@@ -1,29 +1,7 @@
-import json
-
 import pytest
 
 from app.core.redis_cache import RedisCache  # Note: reloaded per-test when needed
-
-
-class _FakeRedis:
-    def __init__(self):
-        self.store = {}
-        self.fail_get = False
-        self.fail_set = False
-
-    async def get(self, key):
-        if self.fail_get:
-            raise RuntimeError("get failed")
-        val = self.store.get(key)
-        return json.dumps(val).encode() if val is not None else None
-
-    async def set(self, key, value, ex=None):
-        if self.fail_set:
-            raise RuntimeError("set failed")
-        self.store[key] = json.loads(value)
-
-    async def close(self):
-        return
+from tests.helpers import FakeRedis
 
 
 @pytest.mark.asyncio
@@ -47,7 +25,7 @@ async def test_redis_cache_connect_fallback(monkeypatch):
 @pytest.mark.asyncio
 async def test_redis_cache_set_authors_page_exception(monkeypatch):
     cache = RedisCache("redis://test")
-    fake = _FakeRedis()
+    fake = FakeRedis()
     fake.fail_set = True
     cache.redis = fake
 
@@ -65,7 +43,7 @@ async def test_redis_cache_get_miss_and_hit(monkeypatch):
     rc_mod = importlib.reload(rc_mod)
 
     cache = rc_mod.RedisCache("redis://test")
-    fake = _FakeRedis()
+    fake = FakeRedis()
     cache.redis = fake
 
     # Miss

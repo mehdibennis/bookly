@@ -4,8 +4,6 @@ from fastapi import HTTPException
 from app.api.v1.routes import admin_users
 from app.core.cache_service import RedisCacheService
 from app.core.config import settings
-
-
 from tests.helpers import DummyUser
 
 

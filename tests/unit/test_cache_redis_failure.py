@@ -1,18 +1,7 @@
 import pytest
 
 from app.core.cache_service import RedisCacheService
-
-
-class FakeRedis:
-    def __init__(self, fail_ping: bool = True):
-        self._fail_ping = fail_ping
-
-    async def ping(self):
-        if self._fail_ping:
-            raise RuntimeError("ping failed")
-
-    async def close(self):
-        return None
+from tests.helpers import FakeRedis
 
 
 def test_redis_connect_failure(monkeypatch):

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, Optional, Set, Tuple
+from typing import Iterable
 
 
 class DummyUser:
@@ -13,8 +13,8 @@ class DummyUser:
 
     def __init__(
         self,
-        raw_token: Optional[str] = None,
-        roles: Optional[Iterable[Tuple[str, str]]] = None,
+        raw_token: str | None = None,
+        roles: Iterable[tuple[str, str]] | None = None,
         username: str = "dummy",
         email: str = "test@example.com",
         is_admin: bool = False,
@@ -24,7 +24,7 @@ class DummyUser:
         self.email = email
         self.is_admin = is_admin
         # support both list-style 'roles' and a has_client_role method
-        self._roles: Set[Tuple[str, str]] = set(roles or [])
+        self._roles: set[tuple[str, str]] = set(roles or [])
         # keep a list-like attribute for tests that inspect .roles
         self.roles = [r for r in self._roles]
 
