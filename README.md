@@ -1,118 +1,151 @@
-# Bookly - API de gestion de livres
+# Bookly — Books API
 
-> **API REST moderne** construite avec FastAPI, PostgreSQL, Redis et Keycloak
+> Modern REST API built with FastAPI, PostgreSQL, Redis and Keycloak.
 
 [![codecov](https://codecov.io/github/mehdibennis/bookly/branch/clean_arch_implem/graph/badge.svg?token=CGu5EDQbRu)](https://codecov.io/github/mehdibennis/bookly)
 [![Python](https://img.shields.io/badge/python-3.11-blue)]()
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688)]()
+[![FastAPI](https://img.shields.io/badge/FastAPI-Modern-009688)]()
 
-## 🚀 Démarrage rapide
+Summary
+-------
+Bookly is a small, modern FastAPI application that manages books. It
+follows a clean-architecture style (domain/services/repositories), uses
+asynchronous SQLAlchemy with asyncpg for the database, Redis for caching,
+and Keycloak for authentication in integration / production-like setups.
+
+Quick facts
+-----------
+- Language: Python 3.11
+- Framework: FastAPI
+- DB: PostgreSQL (async SQLAlchemy / asyncpg)
+- Cache: Redis (redis.asyncio)
+- Auth: Keycloak (OIDC)
+
+Quick start
+-----------
+1. Clone the repo:
 
 ```bash
-# Cloner le dépôt
 git clone <repo-url>
 cd bookly
-
-# Lancer tous les services (API, PostgreSQL, Redis, Keycloak)
-docker compose up -d
-
-# L'API est accessible sur http://localhost:8000
-# Documentation interactive: http://localhost:8000/docs
 ```
 
-## 📋 Prérequis
+2. Bring up services (API, Postgres, Redis, Keycloak):
 
-- Docker & Docker Compose
-- Python 3.12+ (pour développement local)
+```bash
+docker compose up -d
+# API is then available at http://localhost:8000
+```
 
-## 🏗️ Architecture
+Local development notes
+-----------------------
+- Use Python 3.11 for local development.
+- The project expects a PostgreSQL and Redis instance for integration tests.
+- For a smooth local test workflow there's a Make target `make test-local` that
+  will start db/redis (host-mapped
+  ports) and run pytest on the host. This avoids common asyncpg/docker-proxy
+  issues by preferring a direct container IP when necessary.
 
+Repository layout
+-----------------
 ```
 bookly/
-├── app/
-│   ├── api/v1/routes/      # Endpoints API
-│   ├── core/               # Config, auth, cache, error handlers
-│   ├── db/                 # Models, session, migrations
-│   ├── domain/             # Entities & interfaces (DDD)
-│   ├── repositories/       # Couche accès données
-│   ├── schemas/            # DTOs Pydantic
-│   └── services/           # Logique métier
-├── tests/                  # Suite de tests (129 tests)
+├── alembic/                # migrations
+├── app/                    # application code
+│   ├── api/                # API layer (routes, controllers)
+│   │   └── v1/routes/      # versioned HTTP routes
+│   ├── core/               # config, auth, cache, error handlers
+│   ├── db/                 # models, session, migrations
+│   ├── domain/             # domain entities & interfaces (DDD)
+│   ├── repositories/       # data access layer
+│   ├── schemas/            # Pydantic DTOs
+│   └── services/           # business logic
+├── tests/                  # unit & integration tests
+│   └── helpers/            # shared test helpers (DummyUser, FakeRedis...)
+├── scripts/                # local helper scripts (test-local.sh)
 ├── docker-compose.yml
-└── Dockerfile
+├── Makefile
+└── README.md
 ```
 
-**Patterns utilisés:**
-- Domain-Driven Design (DDD)
-- Repository Pattern
-- Unit of Work
-- Dependency Injection
+Testing & quality
+-----------------
+- Tests: integration + unit tests (async)
+- Test runner: pytest, pytest-asyncio, pytest-xdist
+- Coverage: CI target is >= 98% (local runs in this branch reported ~98.28% coverage and 328 passing tests)
 
-## 🧪 Tests & Qualité
+Metrics
+-------
+- Coverage: >= 98% (CI gate)
+- Tests: ~320+ (varies by branch)
+- Typical running time: ~60s (when run concurrently with pytest-xdist)
 
-**Métriques:**
-- **Coverage:** 99.78%
-- **Tests:** 302 passants
-- **Temps d'exécution:** ~60s (parallèle)
+Run tests locally
+------------------
 
-### Lancer les tests
+- Fast, host-run workflow (recommended for local dev):
 
 ```bash
-# Tests en parallèle (recommandé)
-docker compose run --rm web pytest
-
-# Tests en série (debug)
-docker compose run --rm web pytest -n0
-
-# Avec rapport détaillé
-docker compose run --rm web pytest -v
+# DB+Redis containers must be up and running
+make test-local
 ```
 
-**Documentation complète:** Voir [TESTS_README.md](./TESTS_README.md)
-
-## 🔑 Fonctionnalités
-
-### API Endpoints
-
-| Endpoint | Méthode | Auth | Description |
-|----------|---------|------|-------------|
-| `/api/v1/books/` | GET | ❌ | Liste paginée des livres |
-| `/api/v1/books/{id}` | GET | ✅ | Détails d'un livre |
-| `/api/v1/books/` | POST | ✅ | Créer un livre |
-| `/api/v1/books/{id}` | PUT | ✅ | Modifier un livre |
-| `/api/v1/books/{id}` | DELETE | ✅ | Supprimer un livre |
-
-| `/ping` | GET | ❌ | Health check |
-| `/docs` | GET | ❌ | Documentation OpenAPI |
-
-### Fonctionnalités techniques
-
-- ✅ **Authentification** : Keycloak OIDC
-- ✅ **Cache** : Redis pour les listes paginées
-- ✅ **Rate Limiting** : slowapi (IP-based)
-- ✅ **Validation** : Pydantic v2
-- ✅ **ORM** : SQLAlchemy 2.0 (async)
-- ✅ **Admin** : SQLAdmin (en cours)
-- ✅ **Logs** : Structurés avec UUID de requête
-- ✅ **Tests** : pytest-asyncio + pytest-xdist
-
-## 🛠️ Développement
-
-### Variables d'environnement
-
-Créer un fichier `.env` à la racine :
+- To run tests inside the `web` container (CI-like):
 
 ```bash
-# Database
+make test
+```
+
+If you want to run a single test file quickly without the global coverage gate:
+
+```bash
+POSTGRES_USER=bookly_user POSTGRES_PASSWORD=bookly_pass POSTGRES_DB=bookly_db \
+POSTGRES_HOST=127.0.0.1 POSTGRES_PORT=15432 \
+pytest -o addopts= tests/unit/test_unit_redis_cache.py -q
+```
+
+API surface
+-----------
+- GET  /                               — root (service info / health)
+- GET  /api/v1/books/?page=&size=      — paginated list of books (public)
+- GET  /api/v1/books/{id}              — book details (auth required)
+- POST /api/v1/books/                  — create a book (auth required)
+- PUT  /api/v1/books/{id}              — update a book (auth required)
+- DELETE /api/v1/books/{id}           — delete a book (auth required)
+
+- GET  /api/v1/authors/?page=&size=    — paginated list of authors (public)
+- GET  /api/v1/authors/{id}            — author details (auth required)
+- POST /api/v1/authors/                — create an author (auth required)
+- PUT  /api/v1/authors/{id}            — update an author (auth required)
+- DELETE /api/v1/authors/{id}         — delete an author (auth required)
+
+- GET  /ping                           — health check
+- GET  /docs, /redoc                   — API documentation
+
+Technical features
+------------------
+- Authentication: Keycloak (OIDC)
+- Cache: Redis for paginated lists (tests use a `tests.helpers.FakeRedis`)
+- Validation: Pydantic v2
+- ORM: SQLAlchemy async (asyncpg)
+- Rate limiting: slowapi (IP-based)
+- Structured request logging with request UUID
+
+Development & environment
+-------------------------
+Create a `.env` file at the repository root (example values):
+
+```env
+# Database (when running in docker compose the host is usually `db`)
 POSTGRES_USER=bookly_user
-POSTGRES_PASSWORD=your_secure_password
+POSTGRES_PASSWORD=bookly_pass
 POSTGRES_DB=bookly_db
 POSTGRES_HOST=db
 POSTGRES_PORT=5432
 
 # Application
-SECRET_KEY=your_secret_key_here
-DEBUG=false
+SECRET_KEY=replace-me
+DEBUG=true
 APP_HOST=0.0.0.0
 APP_PORT=8000
 
@@ -120,96 +153,75 @@ APP_PORT=8000
 KEYCLOAK_SERVER_URL=http://keycloak:8080
 KEYCLOAK_REALM=bookly
 KEYCLOAK_CLIENT_ID=bookly-client
-KEYCLOAK_CLIENT_SECRET=your_client_secret
+KEYCLOAK_CLIENT_SECRET=
 
 # Redis
 REDIS_URL=redis://redis:6379/0
 ```
 
-### Commandes utiles
+Useful commands
+---------------
 
 ```bash
-# Rebuild l'image
+# Build the web image
 docker compose build web
 
-# Logs en temps réel
+# Tail logs
 docker compose logs -f web
 
-# Shell dans le conteneur
+# Open a shell in the running web container
 docker compose exec web bash
 
-# Migrations (à venir avec Alembic)
+# Run alembic migrations (inside container)
 docker compose run --rm web alembic upgrade head
 
-# Créer une migration
-docker compose run --rm web alembic revision --autogenerate -m "description"
+# Create an alembic revision
+docker compose run --rm web alembic revision --autogenerate -m "msg"
 ```
 
-## 📚 Documentation API
+Testing helpers
+---------------
+Shared test helpers live under `tests/helpers` (for example `DummyUser` and
+`FakeRedis`) and are used by multiple test modules to avoid duplicated test
+fixtures.
 
-La documentation interactive est disponible à `/docs` (Swagger UI) et `/redoc` (ReDoc).
-
-**Exemple de requête:**
+Pre-commit hooks
+----------------
+This repository includes a `.pre-commit-config.yaml`. To enable local pre-commit
+hooks run once on your machine:
 
 ```bash
-# Créer un livre (nécessite token)
-curl -X POST "http://localhost:8000/api/v1/books/" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "1984",
-    "author": "George Orwell"
-  }'
-
-# Lister les livres (public)
-curl "http://localhost:8000/api/v1/books/?page=1&size=10"
+pip install pre-commit
+pre-commit install
+pre-commit run --all-files  # optional: fix the codebase once
 ```
 
-## 🔒 Sécurité
+CI / Coverage
+-------------
+CI is expected to run the full test suite and upload coverage to Codecov. The
+project enforces a high coverage gate in CI (>= 98%). If you want a fast local
+loop, use `make test-local` which starts the services and runs pytest on the
+host.
 
-- **Authentification** : JWT via Keycloak
-- **Rate limiting** : Protection DDoS basique
-- **Validation** : Pydantic stricte sur tous les endpoints
-- **CORS** : Configuré (ajuster selon environnement)
-- **SQL Injection** : Protection via SQLAlchemy ORM
-- **Secrets** : Gérés via variables d'environnement
+Roadmap
+-------
+- Harden SQLAdmin + RBAC for admin UI
 
-## 🚧 Roadmap
+Contributing
+------------
+1. Fork the repository
+2. Create a branch: `git checkout -b feature/your-feature`
+3. Run tests and linters locally
+4. Open a pull request
 
-- [ ] Migration complète Alembic
-- [ ] SQLAdmin sécurisé avec RBAC
-- [ ] CI/CD avec GitHub Actions
-- [ ] Monitoring (Prometheus + Grafana)
-- [ ] Rate limiting avancé (par utilisateur)
-- [ ] Soft delete pour les livres
-- [ ] Historique des modifications
-
-## 📞 Support & Contribution
-
-### Bugs & Features
-
-Ouvrir une issue sur GitHub avec :
-- Description détaillée
-- Steps to reproduce (si bug)
-- Logs pertinents
-
-### Contribution
-
-1. Fork le projet
-2. Créer une branche (`git checkout -b feature/amazing-feature`)
-3. Commit (`git commit -m 'Add amazing feature'`)
-4. Push (`git push origin feature/amazing-feature`)
-5. Ouvrir une Pull Request
-
-**Standards:**
-- Coverage ≥ 98%
-- Tests passants (302/302)
-- Black + isort pour formatting
-- Type hints complets
+Standards
+- Coverage >= 98% in CI
+- Black / isort formatting
+- Type hints and tests for new behavior
 
 
-## 👥 Auteurs
-**Mehdi Bennis**
-📧 medi.b@hotmail.com
+Authors
+-------
+Mehdi Bennis — medi.b@hotmail.com
 
 ---

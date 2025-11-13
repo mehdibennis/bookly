@@ -22,5 +22,5 @@ COPY . /app/
 EXPOSE 8000
 
 
-# Lancer les migrations Alembic avant de démarrer l'app
+# Launch the application with Alembic migrations
 CMD alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
