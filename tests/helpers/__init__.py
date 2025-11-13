@@ -2,7 +2,7 @@
 
 Expose commonly used test helpers at package level so tests can do:
 
-	from tests.helpers import DummyUser, FakeRedis
+        from tests.helpers import DummyUser, FakeRedis
 
 """
 

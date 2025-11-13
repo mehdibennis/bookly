@@ -27,13 +27,6 @@ if _worker:  # pragma: no cover - xdist worker initialization
         conn.execute(sqlalchemy.text(f"CREATE SCHEMA IF NOT EXISTS {_worker_schema}"))
         conn.commit()
 
-    # @event.listens_for(engine.sync_engine, "connect")
-    # def _set_search_path(dbapi_connection, connection_record):
-    #     # Set the schema on each new connection
-    #     cursor = dbapi_connection.cursor()
-    #     cursor.execute(f"SET search_path TO {_worker_schema}")
-    #     cursor.close()
-
 
 # Session asynchrone (type-safe factory)
 async_session = async_sessionmaker(engine, expire_on_commit=False)

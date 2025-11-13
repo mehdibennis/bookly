@@ -186,8 +186,9 @@ async def root():
         "message": "Welcome to the bookly API!",
         "version": "1.0.0",
         "documentation": "/docs",
-        "health": "/health"
+        "health": "/health",
     }
+
 
 # --- Healthcheck ---
 @app.get("/health", tags=["System"])

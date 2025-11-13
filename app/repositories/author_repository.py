@@ -3,16 +3,12 @@
 import logging
 from datetime import date as date_type
 from datetime import datetime as datetime_type
-from typing import TYPE_CHECKING, cast
+from typing import cast
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-if TYPE_CHECKING:
-    from app.db.models.author_model import Author
-else:
-    from app.db.models.author_model import Author
-
+from app.db.models.author_model import Author
 from app.domain.entities import AuthorEntity
 from app.domain.repositories import IAuthorRepository
 from app.domain.value_objects import (

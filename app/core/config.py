@@ -12,9 +12,10 @@ class Settings(BaseSettings):
     APP_HOST: str = "127.0.0.1"
     APP_PORT: int = 8000
     DEBUG: bool = False
-    
+
     class Config:
         env_file = ".env"
+
     # SECRET_KEY: str
 
     # Logging settings

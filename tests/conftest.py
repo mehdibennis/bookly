@@ -42,6 +42,11 @@ async def test_author_id(client):
                 author = await repo.create(author_in)
         return author.id
 
+    # If the override generator produced no session (shouldn't happen when
+    # `client` fixture runs and sets the override), make the failure explicit
+    # so linters and future readers don't assume an implicit `None` return.
+    raise RuntimeError("test_author_id: could not obtain a DB session from override")
+
 
 # ========== Test Utilities ==========
 def get_mock_token() -> str:
