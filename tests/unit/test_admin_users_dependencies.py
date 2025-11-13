@@ -13,16 +13,7 @@ from app.schemas.user_admin_schema import (
 )
 
 
-class DummyUser:
-    def __init__(
-        self, raw_token: str | None = None, roles: set[tuple[str, str]] | None = None
-    ):
-        self.raw_token = raw_token
-        self.username = "dummy"
-        self._roles = roles or set()
-
-    def has_client_role(self, client: str, role: str) -> bool:
-        return (client, role) in self._roles
+from tests.helpers import DummyUser
 
 
 class DummyKC:

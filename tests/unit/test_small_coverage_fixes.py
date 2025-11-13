@@ -6,19 +6,14 @@ from app.core.cache_service import RedisCacheService
 from app.core.config import settings
 
 
-class _DummyUser:
-    """Simple dummy user used to exercise `require_realm_mgmt` branches."""
-
-    def __init__(self, username: str = "dummy", token: str | None = None):
-        self.username = username
-        self.raw_token = token
+from tests.helpers import DummyUser
 
 
 def test_require_realm_mgmt_without_roles_raises(monkeypatch):
     # Ensure no service account is configured
     monkeypatch.setattr(settings, "KEYCLOAK_CLIENT_SECRET", "")
 
-    user = _DummyUser()
+    user = DummyUser()
 
     with pytest.raises(HTTPException):
         # function is synchronous

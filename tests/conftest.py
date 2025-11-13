@@ -148,13 +148,9 @@ async def client():
     _prev_get_session = app.dependency_overrides.get(get_session)
     app.dependency_overrides[get_session] = override_get_session
 
-    class _DummyUser:
-        username = "test-user"
-        email = "test@example.com"
-        roles = ["user"]
-        is_admin = False
+    from tests.helpers import DummyUser
 
-    app.dependency_overrides[get_current_user] = lambda: _DummyUser()
+    app.dependency_overrides[get_current_user] = lambda: DummyUser()
     transport = ASGITransport(app=app, raise_app_exceptions=False)
     async with AsyncClient(
         transport=transport, base_url="http://test", follow_redirects=True
