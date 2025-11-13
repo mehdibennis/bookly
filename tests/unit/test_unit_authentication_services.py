@@ -1,6 +1,6 @@
 import pytest
 
-from conftest import get_mock_token
+from tests.conftest import get_mock_token
 
 
 @pytest.mark.usefixtures("override_keycloak")

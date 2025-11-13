@@ -15,7 +15,7 @@ from app.domain.value_objects import BookCreateData, BookUpdateData
 from app.main import app
 from app.repositories.book_repository import BookRepository
 from app.services.book_service import BookService
-from conftest import get_unique_rate_headers
+from tests.conftest import get_unique_rate_headers
 from tests.mocks.cache_service import MockCacheService
 
 

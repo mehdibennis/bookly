@@ -2,7 +2,7 @@ from uuid import uuid4
 
 import pytest
 
-from conftest import get_auth_headers, get_rate_limit_headers
+from tests.conftest import get_auth_headers, get_rate_limit_headers
 
 
 @pytest.mark.usefixtures("auth_for_class", "override_keycloak")

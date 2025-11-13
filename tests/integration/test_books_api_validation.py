@@ -2,7 +2,7 @@ from uuid import uuid4
 
 import pytest
 
-from conftest import get_unique_rate_headers
+from tests.conftest import get_unique_rate_headers
 
 
 @pytest.mark.usefixtures("override_keycloak")
