@@ -25,7 +25,7 @@ class Book(BookBase):
     id: int
 
     class ConfigDict:
-        from_attributes = True  # ✅ remplace orm_mode=True (Pydantic v2)
+        from_attributes = True  # ✅ replace orm_mode=True (Pydantic v2)
 
 
 class BookWithDetails(Book):

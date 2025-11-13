@@ -1,5 +1,5 @@
-# logique métier (utilise le repo)
-# Cache redis à ajouter ici
+# Business logic (uses the repository)
+# Redis cache to add here
 import logging
 from typing import Any
 

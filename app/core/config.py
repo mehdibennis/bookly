@@ -107,8 +107,5 @@ class Settings(BaseSettings):
             return f"test_{worker}"
         return "test"
 
-    # class Config:
-    #     env_file = ".env"
-
 
 settings = Settings()  # type: ignore[call-arg]
