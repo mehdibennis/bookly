@@ -2,7 +2,7 @@ import asyncio
 import logging
 import os
 import random
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 
 import pytest
@@ -10,8 +10,7 @@ import pytest_asyncio
 import sqlalchemy
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import event, text
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
 from app.core.config import settings
@@ -19,9 +18,9 @@ from app.core.keycloak_auth import KeycloakUser, get_current_user
 from app.core.redis_cache import RedisCache
 from app.db.session import Base, get_session
 from app.db.unit_of_work import SqlAlchemyUnitOfWork
+from app.domain.value_objects import AuthorCreateData
 from app.main import app
 from app.repositories.author_repository import AuthorRepository
-from app.schemas.author_schema import AuthorCreate
 
 # ========== Pytest Fixtures ==========
 
@@ -35,7 +34,7 @@ async def test_author_id(client):
         # Use a random name to avoid conflicts
         first_name = f"Test{random.randint(1000, 9999)}"
         last_name = f"Author{random.randint(1000, 9999)}"
-        author_in = AuthorCreate(first_name=first_name, last_name=last_name)
+        author_in = AuthorCreateData(first_name=first_name, last_name=last_name)
         author = await repo.get_by_full_name(first_name, last_name)
         if not author:
             async with uow:
@@ -131,9 +130,7 @@ async def client():
             cursor.execute(f"SET search_path TO {settings.TEST_SCHEMA}")
             cursor.close()
 
-    TestSessionLocal = sessionmaker(
-        bind=test_engine, class_=AsyncSession, expire_on_commit=False
-    )
+    TestSessionLocal = async_sessionmaker(bind=test_engine, expire_on_commit=False)
 
     async def override_get_session():
         async with TestSessionLocal() as session:
@@ -190,12 +187,14 @@ def mock_user():
             "sub": "12345",
             "preferred_username": "testuser",
             "email": "testuser@example.com",
+            # Include realm_access.roles so KeycloakUser.is_admin returns True
+            "realm_access": {"roles": ["admin"]},
         },
         None,
     )
 
 
-@pytest_asyncio.fixture
+@pytest.fixture
 def override_keycloak(mock_user):
     app.dependency_overrides[get_current_user] = lambda: mock_user
     yield
@@ -275,9 +274,7 @@ async def override_db_session_for_all_tests():
             cursor.execute(f"SET search_path TO {settings.TEST_SCHEMA}")
             cursor.close()
 
-    TestSessionLocal = sessionmaker(
-        bind=test_engine, class_=AsyncSession, expire_on_commit=False
-    )
+    TestSessionLocal = async_sessionmaker(bind=test_engine, expire_on_commit=False)
 
     async def override_get_session():
         async with TestSessionLocal() as session:
@@ -287,8 +284,10 @@ async def override_db_session_for_all_tests():
                     await session.execute(
                         text(f"SET search_path TO {settings.TEST_SCHEMA}")
                     )
-                except Exception:
-                    pass
+                except Exception as e:
+                    logging.getLogger(__name__).warning(
+                        "Failed to set search_path: %s", e
+                    )
             yield session
 
     app.dependency_overrides[get_session] = override_get_session
@@ -297,3 +296,51 @@ async def override_db_session_for_all_tests():
     finally:
         app.dependency_overrides.pop(get_session, None)
         await test_engine.dispose()
+
+
+@pytest.fixture
+def mock_keycloak_auth(monkeypatch):
+    # Fake Redis cache for authors paging
+    from app.core import redis_cache
+
+    class MockRedisCache:
+        async def connect(self):
+            pass
+
+        async def close(self):
+            pass
+
+        async def get_authors_page(self, page, size):
+            return None
+
+        async def set_authors_page(self, page, size, data):
+            pass
+
+        async def get_authors_page_search(self, page, size, search):
+            return None
+
+        async def set_authors_page_search(self, page, size, search, data):
+            pass
+
+    monkeypatch.setattr(redis_cache, "RedisCache", lambda url: MockRedisCache())
+
+    from app.core.keycloak_auth import keycloak_auth
+
+    class MockKeycloakOpenID:
+        def public_key(self):
+            return "fake_public_key"
+
+        def userinfo(self, token):
+            return {"email": "test@example.com", "sub": "user123"}
+
+    monkeypatch.setattr(keycloak_auth, "keycloak_openid", MockKeycloakOpenID())
+
+    fake_token_info = {
+        "preferred_username": "admin",
+        "realm_access": {"roles": ["admin", "user"]},
+        "email": "admin@example.com",
+        "exp": 9999999999,
+    }
+
+    with patch("app.core.keycloak_auth.jwt.decode", return_value=fake_token_info):
+        yield

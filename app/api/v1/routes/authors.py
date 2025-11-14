@@ -47,6 +47,9 @@ router = APIRouter(prefix="/authors", tags=["authors"])
     **Note :** Cet endpoint est public (pas d'authentification requise).
     """,
     response_description="Liste paginée d'auteurs avec métadonnées de pagination",
+    responses={
+        200: {"description": "Auteurs récupérés avec succès"},
+    },
 )
 async def list_authors(
     page: int = Query(1, ge=1, description="Numéro de page (>=1)", example=1),
@@ -83,6 +86,7 @@ async def list_authors(
     responses={
         404: {"description": "Auteur non trouvé"},
         401: {"description": "Non authentifié"},
+        200: {"description": "Auteur récupéré avec succès"},
     },
 )
 async def get_author(
@@ -120,6 +124,8 @@ async def get_author(
     responses={
         400: {"description": "Données invalides"},
         409: {"description": "Conflit : auteur existant"},
+        401: {"description": "Non authentifié"},
+        201: {"description": "Auteur créé avec succès"},
     },
 )
 async def create_author(
@@ -138,7 +144,7 @@ async def create_author(
 @router.patch(
     "/{author_id}",
     response_model=Author,
-    name="authors:partial_update",
+    name="authors:update",
     summary="Mettre à jour partiellement un auteur (PATCH)",
     description="""
     Met à jour partiellement les informations d'un auteur existant.
@@ -196,6 +202,7 @@ async def partial_update_author(
     responses={
         204: {"description": "Auteur supprimé avec succès"},
         404: {"description": "Auteur non trouvé"},
+        401: {"description": "Non authentifié"},
     },
 )
 async def delete_author(

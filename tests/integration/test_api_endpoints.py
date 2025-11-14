@@ -2,6 +2,8 @@ from uuid import uuid4
 
 import pytest
 
+from app.core.url_helpers import reverse
+from app.main import app as fastapi_app
 from tests.conftest import get_auth_headers, get_rate_limit_headers
 
 
@@ -10,18 +12,18 @@ class TestAPI:
     @pytest.mark.asyncio
     async def test_login_and_ping(self, client):
         headers = get_auth_headers()
+        path = reverse(fastapi_app, "ping")
 
-        # /ping requires admin role; override_keycloak sets a basic user
-        # Accept 403 or 200 (if override changes)
-        resp = await client.get("/ping", headers=headers)
-        assert resp.status_code in [200, 403]
+        resp = await client.get(path, headers=headers)
+        assert resp.status_code == 200
 
     @pytest.mark.asyncio
     async def test_pagination(self, client):
         headers = get_auth_headers()
+        params = {"page": 1, "size": 2}
+        path = reverse(fastapi_app, "books:list")
 
-        list_url = "/api/v1/books/?page=1&size=2"
-        resp = await client.get(list_url, headers=headers)
+        resp = await client.get(path, params=params, headers=headers)
         assert resp.status_code == 200
         assert "data" in resp.json()
         meta = resp.json()["meta"]
@@ -32,16 +34,18 @@ class TestAPI:
     async def test_throttling(self, client):
         # Rate limiting per IP
         rate_headers = get_rate_limit_headers(ip_suffix=10)
+        path = reverse(fastapi_app, "books:list")
 
         for _ in range(5):
-            await client.get("/api/v1/books/", headers=rate_headers)
+            await client.get(path, headers=rate_headers)
 
     @pytest.mark.asyncio
     async def test_create_book(self, client, test_author_id):
         headers = get_auth_headers()
+        path = reverse(fastapi_app, "books:create")
 
         book_data = {"title": f"New Book {uuid4()}", "authors": [test_author_id]}
-        resp = await client.post("/api/v1/books/", json=book_data, headers=headers)
+        resp = await client.post(path, json=book_data, headers=headers)
         assert resp.status_code == 201
         assert resp.json()["title"].startswith("New Book ")
         assert resp.json()["authors"] == [test_author_id]
@@ -49,31 +53,35 @@ class TestAPI:
     @pytest.mark.asyncio
     async def test_delete_book(self, client, test_author_id):
         headers = get_auth_headers()
+        create_path = reverse(fastapi_app, "books:create")
 
         # First create a book
         book_data = {"title": f"To Delete {uuid4()}", "authors": [test_author_id]}
-        resp = await client.post("/api/v1/books/", json=book_data, headers=headers)
+        resp = await client.post(create_path, json=book_data, headers=headers)
         assert resp.status_code == 201
         book_id = resp.json()["id"]
 
         # Then delete it
-        resp = await client.delete(f"/api/v1/books/{book_id}", headers=headers)
+        delete_path = reverse(fastapi_app, "books:delete", book_id=book_id)
+        resp = await client.delete(delete_path, headers=headers)
         assert resp.status_code == 204
 
     @pytest.mark.asyncio
     async def test_error_handling(self, client):
         headers = get_auth_headers()
+        get_404 = reverse(fastapi_app, "books:get", book_id=99999)
 
-        get_404 = "/api/v1/books/99999"
         resp = await client.get(get_404, headers=headers)
         assert resp.status_code == 404
 
-        create_url = "/api/v1/books/"
-        resp = await client.post(create_url, json={"title": ""}, headers=headers)
-        assert resp.status_code == 422
-        resp = await client.post(create_url, json={}, headers=headers)
+        create_path = reverse(fastapi_app, "books:create")
+        resp = await client.post(create_path, json={"title": ""}, headers=headers)
         assert resp.status_code == 422
 
-        # /ping requires admin; accept 403 or 200
-        resp = await client.get("/ping", headers=headers)
-        assert resp.status_code in [200, 403]
+        resp = await client.post(create_path, json={}, headers=headers)
+        assert resp.status_code == 422
+
+        path = reverse(fastapi_app, "ping")
+
+        resp = await client.get(path, headers=headers)
+        assert resp.status_code == 200

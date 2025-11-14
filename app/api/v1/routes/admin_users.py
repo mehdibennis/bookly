@@ -84,7 +84,19 @@ def require_realm_mgmt(user: KeycloakUser = Depends(get_current_user)) -> Keyclo
     return user
 
 
-@router.post("", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    name="admin_users:create",
+    status_code=status.HTTP_201_CREATED,
+    summary="Create new user",
+    description="Create a new user in the Keycloak realm.",
+    responses={
+        201: {"description": "User created successfully"},
+        401: {"description": "Not authenticated"},
+        403: {"description": "Insufficient permissions"},
+        502: {"description": "Keycloak service error"},
+    },
+)
 async def create_user(
     payload: UserAdminCreate,
     _: object = Depends(require_realm_mgmt),
@@ -106,7 +118,19 @@ async def create_user(
         raise HTTPException(status_code=502, detail=str(e))
 
 
-@router.put("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.put(
+    "/{user_id}",
+    name="admin_users:update",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Update user by ID",
+    description="Update a user's details by their ID in the Keycloak realm.",
+    responses={
+        204: {"description": "User updated successfully"},
+        401: {"description": "Not authenticated"},
+        403: {"description": "Insufficient permissions"},
+        502: {"description": "Keycloak service error"},
+    },
+)
 async def update_user(
     user_id: str,
     payload: UserAdminUpdate,
@@ -126,7 +150,19 @@ async def update_user(
         raise HTTPException(status_code=502, detail=str(e))
 
 
-@router.put("/{user_id}/password", status_code=status.HTTP_204_NO_CONTENT)
+@router.put(
+    "/{user_id}/password",
+    name="admin_users:set_password",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Set user password",
+    description="Set or update a user's password by their ID in the Keycloak realm.",
+    responses={
+        204: {"description": "Password set successfully"},
+        401: {"description": "Not authenticated"},
+        403: {"description": "Insufficient permissions"},
+        502: {"description": "Keycloak service error"},
+    },
+)
 async def set_password(
     user_id: str,
     payload: UserPasswordUpdate,
@@ -141,7 +177,19 @@ async def set_password(
         raise HTTPException(status_code=502, detail=str(e))
 
 
-@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{user_id}",
+    name="admin_users:delete",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete user by ID",
+    description="Delete a user by their ID from the Keycloak realm.",
+    responses={
+        204: {"description": "User deleted successfully"},
+        401: {"description": "Not authenticated"},
+        403: {"description": "Insufficient permissions"},
+        502: {"description": "Keycloak service error"},
+    },
+)
 async def delete_user(
     user_id: str,
     _: object = Depends(require_realm_mgmt),
@@ -153,7 +201,20 @@ async def delete_user(
         raise HTTPException(status_code=502, detail=str(e))
 
 
-@router.get("/{user_id}", status_code=status.HTTP_200_OK)
+@router.get(
+    "/{user_id}",
+    name="admin_users:get",
+    status_code=status.HTTP_200_OK,
+    summary="Get user by ID",
+    description="Retrieve a user by their ID from the Keycloak realm.",
+    responses={
+        200: {"description": "User retrieved successfully"},
+        401: {"description": "Not authenticated"},
+        403: {"description": "Insufficient permissions"},
+        404: {"description": "User not found"},
+        502: {"description": "Keycloak service error"},
+    },
+)
 async def get_user(
     user_id: str,
     _: object = Depends(require_realm_mgmt),
@@ -162,13 +223,25 @@ async def get_user(
     try:
         user = await kc.get_user_by_id(user_id)
         if not user:
-            raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+            raise HTTPException(status_code=404, detail="User not found")
         return user
     except KeycloakAdminError as e:
         raise HTTPException(status_code=502, detail=str(e))
 
 
-@router.get("", status_code=status.HTTP_200_OK)
+@router.get(
+    "",
+    name="admin_users:list",
+    status_code=status.HTTP_200_OK,
+    summary="List all users",
+    description="Retrieve a list of all users in the Keycloak realm.",
+    responses={
+        200: {"description": "List of users retrieved successfully"},
+        401: {"description": "Not authenticated"},
+        403: {"description": "Insufficient permissions"},
+        502: {"description": "Keycloak service error"},
+    },
+)
 async def list_users(
     _: object = Depends(require_realm_mgmt),
     kc: KeycloakAdmin = Depends(get_admin_client),

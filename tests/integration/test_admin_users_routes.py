@@ -2,6 +2,8 @@ import pytest
 
 from app.api.v1.routes.admin_users import get_admin_client
 from app.core.config import settings
+from app.core.url_helpers import reverse
+from app.main import app as fastapi_app
 
 
 class FakeKC:
@@ -54,7 +56,8 @@ async def test_admin_users_crud(client, monkeypatch):
     app.dependency_overrides[get_admin_client] = lambda: fake
 
     # List empty
-    r = await client.get("/api/v1/users")
+    list_path = reverse(fastapi_app, "admin_users:list")
+    r = await client.get(list_path)
     assert r.status_code == 200
     assert r.json() == []
 
@@ -67,31 +70,38 @@ async def test_admin_users_crud(client, monkeypatch):
         "password": "Passw0rd!",
         "enabled": True,
     }
-    r = await client.post("/api/v1/users", json=payload)
+    create_path = reverse(fastapi_app, "admin_users:create")
+    r = await client.post(create_path, json=payload)
     assert r.status_code == 201
     uid = r.json()["id"]
 
     # Get by id
-    r = await client.get(f"/api/v1/users/{uid}")
+    get_path = reverse(fastapi_app, "admin_users:get", user_id=uid)
+    r = await client.get(get_path)
     assert r.status_code == 200
     assert r.json()["id"] == uid
 
     # Update
-    r = await client.put(f"/api/v1/users/{uid}", json={"email": "new@example.com"})
+    update_path = reverse(fastapi_app, "admin_users:update", user_id=uid)
+    r = await client.put(update_path, json={"email": "new@example.com"})
     assert r.status_code == 204
-    r = await client.get(f"/api/v1/users/{uid}")
+    get_path = reverse(fastapi_app, "admin_users:get", user_id=uid)
+    r = await client.get(get_path)
     assert r.json()["email"] == "new@example.com"
 
     # Set password
-    r = await client.put(f"/api/v1/users/{uid}/password", json={"password": "NewP@ss1"})
+    password_path = reverse(fastapi_app, "admin_users:set_password", user_id=uid)
+    r = await client.put(password_path, json={"password": "NewP@ss1"})
     assert r.status_code == 204
 
     # Delete
-    r = await client.delete(f"/api/v1/users/{uid}")
+    delete_path = reverse(fastapi_app, "admin_users:delete", user_id=uid)
+    r = await client.delete(delete_path)
     assert r.status_code == 204
 
     # Not found after delete
-    r = await client.get(f"/api/v1/users/{uid}")
+    get_path = reverse(fastapi_app, "admin_users:get", user_id=uid)
+    r = await client.get(get_path)
     assert r.status_code == 404
 
     # cleanup override

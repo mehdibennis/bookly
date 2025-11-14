@@ -100,7 +100,9 @@ class BookService:
             await self.cache.invalidate_books_cache()
             return await self.repo.create(normalized_data)
 
-    async def partial_update_book(self, book_id: int, book_data: BookUpdateData) -> BookEntity:
+    async def partial_update_book(
+        self, book_id: int, book_data: BookUpdateData
+    ) -> BookEntity:
         """
         Update an existing book's fields.
 

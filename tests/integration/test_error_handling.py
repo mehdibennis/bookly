@@ -10,7 +10,7 @@ from app.core.exceptions import (
     UnauthorizedException,
 )
 from app.db.session import get_session
-from app.domain.entities import BookEntity
+from app.domain.value_objects import BookCreateData, PaginationParams
 from app.main import app
 from app.repositories.book_repository import BookRepository
 
@@ -42,14 +42,18 @@ async def test_perf_create_n_and_list_under_threshold(
         start = time.perf_counter()
 
         for i in range(n):
-            book_entity = BookEntity(
-                id=None, title=f"Perf {i}-{uuid4()}", authors=[test_author_id]
+            book_data = BookCreateData(
+                title=f"Perf {i}-{uuid4()}", authors=[test_author_id]
             )
-            await repo.create(book_entity)
+            await repo.create(book_data)
 
         # List with pagination in 2 pages
-        items1, total = await repo.get_paginated(skip=0, limit=limit)
-        items2, _ = await repo.get_paginated(skip=limit, limit=limit)
+        result1 = await repo.get_paginated(PaginationParams(page=1, size=limit))
+        items1 = result1.data
+        total = result1.meta.total
+
+        result2 = await repo.get_paginated(PaginationParams(page=2, size=limit))
+        items2 = result2.data
 
         elapsed = time.perf_counter() - start
         # Sanity checks and a generous threshold (should pass in CI/Docker)

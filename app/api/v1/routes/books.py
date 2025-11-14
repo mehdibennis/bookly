@@ -44,6 +44,9 @@ router = APIRouter(prefix="/books", tags=["books"])
     **Note :** Cet endpoint est public (pas d'authentification requise).
     """,
     response_description="Liste paginée de livres avec métadonnées de pagination",
+    responses={
+        200: {"description": "Livres récupérés avec succès"},
+    },
 )
 async def list_books(
     page: int = Query(1, ge=1, description="Numéro de page (>=1)", example=1),
@@ -78,6 +81,7 @@ async def list_books(
     responses={
         404: {"description": "Livre non trouvé"},
         401: {"description": "Non authentifié"},
+        200: {"description": "Livre récupéré avec succès"},
     },
 )
 async def get_book(
@@ -115,6 +119,7 @@ async def get_book(
         201: {"description": "Livre créé avec succès"},
         400: {"description": "Données invalides"},
         409: {"description": "Conflit : livre existant"},
+        401: {"description": "Non authentifié"},
     },
 )
 async def create_book(
@@ -132,7 +137,7 @@ async def create_book(
 @router.patch(
     "/{book_id}",
     response_model=Book,
-    name="books:patch",
+    name="books:update",
     summary="Mettre à jour partiellement un livre",
     description="""
     Met à jour les informations d'un livre existant.
@@ -149,6 +154,7 @@ async def create_book(
         200: {"description": "Livre mis à jour partiellement"},
         404: {"description": "Livre non trouvé"},
         409: {"description": "Conflit de titre"},
+        401: {"description": "Non authentifié"},
     },
 )
 async def patch_book(
@@ -180,6 +186,7 @@ async def patch_book(
     responses={
         204: {"description": "Livre supprimé avec succès"},
         404: {"description": "Livre non trouvé"},
+        401: {"description": "Non authentifié"},
     },
 )
 async def delete_book(
