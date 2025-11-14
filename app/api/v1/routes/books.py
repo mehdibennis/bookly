@@ -138,23 +138,22 @@ async def create_book(
     "/{book_id}",
     response_model=Book,
     name="books:update",
-    summary="Mettre à jour partiellement un livre",
+    summary="Book partial update",
     description="""
-    Met à jour les informations d'un livre existant.
+    Update book information.
+    **Authentication required:** Valid JWT token
 
-    **Authentification requise :** Token JWT valide
+    **Partial update:** All fields are optional.
 
-    **Mise à jour partielle :** Tous les champs sont optionnels.
-
-    **Erreurs possibles :**
-    - `404 Not Found` : Livre inexistant
-    - `409 Conflict` : Titre en conflit avec un autre livre
+    **Possible errors:**
+    - `404 Not Found` : Book does not exist
+    - `409 Conflict` : Title conflicts with another book
     """,
     responses={
-        200: {"description": "Livre mis à jour partiellement"},
-        404: {"description": "Livre non trouvé"},
-        409: {"description": "Conflit de titre"},
-        401: {"description": "Non authentifié"},
+        200: {"description": "Book partially updated"},
+        404: {"description": "Book not found"},
+        409: {"description": "Title conflict"},
+        401: {"description": "Unauthorized"},
     },
 )
 async def patch_book(
