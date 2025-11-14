@@ -61,7 +61,7 @@ async def test_update_book_branches(test_author_id):
     async for repo, service in _make_service():
         # Not found
         with pytest.raises(NotFoundException):
-            await service.update_book(999999, BookUpdateData(title="X"))
+            await service.partial_update_book(999999, BookUpdateData(title="X"))
         # Seed two books
         b1 = await service.create_book(
             BookCreateData(title=f"Seed1 {uuid4()}", authors=[test_author_id])
@@ -71,13 +71,13 @@ async def test_update_book_branches(test_author_id):
         )
         # Empty title
         with pytest.raises(ValueError):
-            await service.update_book(b1.id, BookUpdateData(title="   "))
+            await service.partial_update_book(b1.id, BookUpdateData(title="   "))
         # Duplicate title conflict
         with pytest.raises(ConflictException):
-            await service.update_book(b1.id, BookUpdateData(title=b2.title))
+            await service.partial_update_book(b1.id, BookUpdateData(title=b2.title))
         # Authors invalid (contains non-positive)
         with pytest.raises(ValueError):
-            await service.update_book(b1.id, BookUpdateData(authors=[0]))
+            await service.partial_update_book(b1.id, BookUpdateData(authors=[0]))
         # Successful partial update (authors only) -> create a second author
         async for session in app.dependency_overrides[get_session]():
             arepo = AuthorRepository(session)
@@ -85,7 +85,7 @@ async def test_update_book_branches(test_author_id):
                 AuthorCreateData(first_name=f"Temp{uuid4()}", last_name="Author")
             )
             new_author_id = author2.id
-        updated = await service.update_book(
+        updated = await service.partial_update_book(
             b1.id, BookUpdateData(authors=[new_author_id])
         )
         assert updated.authors == [new_author_id]

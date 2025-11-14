@@ -128,12 +128,12 @@ async def create_book(
     return BookMapper.entity_to_dto(book)
 
 
-# --- UPDATE ---
-@router.put(
+# --- PARTIAL UPDATE (PATCH) ---
+@router.patch(
     "/{book_id}",
     response_model=Book,
-    name="books:update",
-    summary="Mettre à jour un livre",
+    name="books:patch",
+    summary="Mettre à jour partiellement un livre",
     description="""
     Met à jour les informations d'un livre existant.
 
@@ -145,30 +145,6 @@ async def create_book(
     - `404 Not Found` : Livre inexistant
     - `409 Conflict` : Titre en conflit avec un autre livre
     """,
-    responses={
-        200: {"description": "Livre mis à jour"},
-        404: {"description": "Livre non trouvé"},
-        409: {"description": "Conflit de titre"},
-    },
-)
-async def update_book(
-    book_id: int,
-    book_in: BookUpdate,
-    book_service: BookService = Depends(get_book_service),
-    user=Depends(get_current_user),
-):
-    """Met à jour un livre existant."""
-    book_data = BookMapper.update_dto_to_domain(book_in)
-    book = await book_service.update_book(book_id, book_data)
-    return BookMapper.entity_to_dto(book)
-
-
-# --- PARTIAL UPDATE (PATCH) ---
-@router.patch(
-    "/{book_id}",
-    response_model=Book,
-    name="books:patch",
-    summary="Mettre à jour partiellement un livre",
     responses={
         200: {"description": "Livre mis à jour partiellement"},
         404: {"description": "Livre non trouvé"},
@@ -183,7 +159,7 @@ async def patch_book(
 ):
     """Met à jour partiellement un livre (PATCH semantics)."""
     book_data = BookMapper.update_dto_to_domain(book_in)
-    book = await book_service.update_book(book_id, book_data)
+    book = await book_service.partial_update_book(book_id, book_data)
     return BookMapper.entity_to_dto(book)
 
 

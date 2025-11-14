@@ -82,13 +82,13 @@ async def test_update_book_success_and_conflict(test_author_id):
         # Create another book to cause a conflict when updating title to t2
         await service.create_book(BookCreateData(title=t2, authors=[test_author_id]))
         # Successful update: update title only (normalize case and trim)
-        updated = await service.update_book(
+        updated = await service.partial_update_book(
             b1.id, BookUpdateData(title=f"  {t1.lower()}  ")
         )
         assert updated.title == t1.title()
         # Conflict update (set title to another existing book's title)
         with pytest.raises(ConflictException):
-            await service.update_book(b1.id, BookUpdateData(title=t2))
+            await service.partial_update_book(b1.id, BookUpdateData(title=t2))
 
 
 @pytest.mark.asyncio

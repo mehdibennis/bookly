@@ -29,7 +29,7 @@ class FakeBookService:
             authors_number=0,
         )
 
-    async def update_book(self, book_id, book_data):
+    async def partial_update_book(self, book_id, book_data):
         return BookEntity(
             id=book_id,
             title=book_data.title if hasattr(book_data, "title") else "t",
@@ -59,12 +59,8 @@ async def test_books_route_handlers_direct_call():
     created = await books_module.create_book(BookCreate, book_service=svc, user=user)
     assert created.id == 2
 
-    # update_book
-    BookUpdate = SimpleNamespace(title="up", authors=None)
-    updated = await books_module.update_book(2, BookUpdate, book_service=svc, user=user)
-    assert updated.id == 2
-
     # patch_book calls same service
+    BookUpdate = SimpleNamespace(title="up", authors=None)
     patched = await books_module.patch_book(2, BookUpdate, book_service=svc, user=user)
     assert patched.id == 2
 

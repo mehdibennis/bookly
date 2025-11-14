@@ -15,8 +15,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
-
-    # SECRET_KEY: str
+        extra = "ignore"  # Ignore extra fields from .env file
 
     # Logging settings
     LOG_LEVEL: str = "INFO"

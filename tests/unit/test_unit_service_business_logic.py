@@ -28,7 +28,7 @@ async def test_service_update_title_only_normalized_and_no_conflict_with_self(
         cache = MockCacheService()
         service = BookService(repo, uow, cache)
         # Update b1 title with different casing/spaces of the same title: should not conflict
-        updated = await service.update_book(
+        updated = await service.partial_update_book(
             b1.id, BookUpdateData(title=f"  {t1.lower()}  ")
         )
         assert updated.id == b1.id

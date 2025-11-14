@@ -64,7 +64,7 @@ class TestServiceLayerEdgeCases:
                 BookCreateData(title=f"Update Test {uuid4()}", authors=[test_author_id])
             )
             with pytest.raises(ValueError) as exc_info:
-                await service.update_book(book.id, BookUpdateData(title="   "))
+                await service.partial_update_book(book.id, BookUpdateData(title="   "))
             error_msg = str(exc_info.value).lower()
             assert "titre" in error_msg or "title" in error_msg
 
@@ -77,7 +77,7 @@ class TestServiceLayerEdgeCases:
             service = BookService(repo, uow, cache)
             update_data = BookUpdateData(title="test title")
             with pytest.raises(ValueError) as exc_info:
-                await service.update_book(-1, update_data)
+                await service.partial_update_book(-1, update_data)
 
             assert "L'ID du livre doit être un entier positif" in str(exc_info.value)
 
@@ -93,7 +93,7 @@ class TestServiceLayerEdgeCases:
             update_data = BookUpdateData(title="Updated Title")
 
             with pytest.raises(NotFoundException):
-                await service.update_book(999999, update_data)
+                await service.partial_update_book(999999, update_data)
 
     @pytest.mark.asyncio
     async def test_book_service_delete_nonexistent_book(self):
@@ -168,7 +168,7 @@ class TestServiceLayerEdgeCases:
             update_data = BookUpdateData(title=title2)
 
             with pytest.raises(Exception) as exc_info:
-                await service.update_book(book1.id, update_data)
+                await service.partial_update_book(book1.id, update_data)
 
             assert (
                 "exist" in str(exc_info.value).lower()

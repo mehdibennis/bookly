@@ -35,7 +35,7 @@ async def test_update_book_no_changes_ok(client, test_author_id):
     book = r.json()
 
     # Update with empty body (no fields changed)
-    r = await client.put(f"/api/v1/books/{book['id']}", json={}, headers=headers)
+    r = await client.patch(f"/api/v1/books/{book['id']}", json={}, headers=headers)
     assert r.status_code == 200
     updated = r.json()
     assert updated["title"].startswith("Nochange ")  # normalized
