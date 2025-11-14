@@ -7,12 +7,13 @@ from uuid import uuid4
 
 import pytest
 
+from app.core.url_helpers import reverse
 from app.db.session import get_session
 from app.db.unit_of_work import SqlAlchemyUnitOfWork
-from app.domain.entities import BookEntity
 from app.domain.exceptions import NotFoundException
 from app.domain.value_objects import BookCreateData, BookUpdateData
 from app.main import app
+from app.main import app as fastapi_app
 from app.repositories.book_repository import BookRepository
 from app.services.book_service import BookService
 from tests.conftest import get_unique_rate_headers
@@ -32,6 +33,7 @@ class TestServiceLayerEdgeCases:
                     title=f"GetBook Test {uuid4()}", authors=[test_author_id]
                 )
             )
+            assert book.id is not None
             fetched = await service.get_book(book.id)
             assert fetched is not None
             assert fetched.id == book.id
@@ -63,6 +65,7 @@ class TestServiceLayerEdgeCases:
             book = await service.create_book(
                 BookCreateData(title=f"Update Test {uuid4()}", authors=[test_author_id])
             )
+            assert book.id is not None
             with pytest.raises(ValueError) as exc_info:
                 await service.partial_update_book(book.id, BookUpdateData(title="   "))
             error_msg = str(exc_info.value).lower()
@@ -166,6 +169,7 @@ class TestServiceLayerEdgeCases:
 
             # Try to update book1 to have the same title as book2
             update_data = BookUpdateData(title=title2)
+            assert book1.id is not None
 
             with pytest.raises(Exception) as exc_info:
                 await service.partial_update_book(book1.id, update_data)
@@ -218,8 +222,8 @@ class TestServiceLayerEdgeCases:
             assert result is None
 
             # Create a book directly through repository and fetch it back by title
-            new_entity = BookEntity(
-                id=None, title=f"Repo Created {uuid4()}", authors=[test_author_id]
+            new_entity = BookCreateData(
+                title=f"Repo Created {uuid4()}", authors=[test_author_id]
             )
             created = await repo.create(new_entity)
             assert created.id is not None
@@ -251,9 +255,8 @@ class TestServiceIntegrationEdgeCases:
         headers = get_unique_rate_headers()
 
         # Test creating book with empty title (missing author_id will yield 422)
-        resp = await client.post(
-            "/api/v1/books/", json={"title": "   "}, headers=headers
-        )
+        path = reverse(fastapi_app, "books:create")
+        resp = await client.post(path, json={"title": "   "}, headers=headers)
         assert resp.status_code in [400, 401, 422]
 
     @pytest.mark.asyncio
@@ -262,7 +265,8 @@ class TestServiceIntegrationEdgeCases:
         headers = get_unique_rate_headers(ip_range="10.0.9")
         title = f"Concurrent {uuid4()}"
         book_data = {"title": title}
-        first = await client.post("/api/v1/books/", json=book_data, headers=headers)
+        path = reverse(fastapi_app, "books:create")
+        first = await client.post(path, json=book_data, headers=headers)
         assert first.status_code in [201, 409, 401, 422]
-        second = await client.post("/api/v1/books/", json=book_data, headers=headers)
+        second = await client.post(path, json=book_data, headers=headers)
         assert second.status_code in [409, 401, 422]

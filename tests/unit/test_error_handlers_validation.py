@@ -37,7 +37,7 @@ async def test_validation_exception_handler_string_type_branch(monkeypatch):
 
     resp = await validation_exception_handler(req, exc)
     assert resp.status_code == 422
-    body = json.loads(resp.body.decode())
+    body = json.loads(resp.body)
     # Ensure our French message for string_type path is present
     assert "chaîne de caractères" in body["error"]["message"]
     # And debug validation details were attached

@@ -9,6 +9,8 @@ import pytest
 from fastapi import HTTPException
 
 from app.core.keycloak_auth import KeycloakAuth, KeycloakUser, require_admin
+from app.core.url_helpers import reverse
+from app.main import app as fastapi_app
 
 
 class TestKeycloakAuthentication:
@@ -190,27 +192,29 @@ class TestKeycloakIntegration:
     async def test_authentication_flow_edge_cases(self, client):
         """Test authentication flow edge cases."""
         # Test missing Authorization header (GET /books/ doesn't require auth)
-        resp = await client.get("/api/v1/books/")
+        path = reverse(fastapi_app, "books:list")
+        resp = await client.get(path)
         assert resp.status_code == 200  # GET books is public
 
         # Test malformed Authorization header (still public endpoint)
         malformed_headers = {"Authorization": "InvalidFormat"}
-        resp = await client.get("/api/v1/books/", headers=malformed_headers)
+        resp = await client.get(path, headers=malformed_headers)
         assert resp.status_code == 200  # Still public
 
         # Test empty Bearer token (still public endpoint)
         empty_token_headers = {"Authorization": "Bearer "}
-        resp = await client.get("/api/v1/books/", headers=empty_token_headers)
+        resp = await client.get(path, headers=empty_token_headers)
         assert resp.status_code == 200  # Still public
 
     @pytest.mark.asyncio
     async def test_token_expiration_scenarios(self, client):
         """Test token expiration and validation scenarios."""
         # Test with public endpoint that doesn't require auth
-        resp = await client.get("/api/v1/books/")
+        path = reverse(fastapi_app, "books:list")
+        resp = await client.get(path)
         assert resp.status_code == 200
 
         # Test with obviously invalid token format (still public endpoint)
         invalid_headers = {"Authorization": "Bearer not.a.valid.jwt.token"}
-        resp = await client.get("/api/v1/books/", headers=invalid_headers)
+        resp = await client.get(path, headers=invalid_headers)
         assert resp.status_code == 200  # Public endpoint ignores invalid tokens
