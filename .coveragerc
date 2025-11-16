@@ -8,6 +8,7 @@ omit =
     */venv/*
     */.venv/*
     app/main.py
+    app/core/limiter.py
     app/core/logging_config.py
     app/core/middleware.py
     app/core/observability.py

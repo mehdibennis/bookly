@@ -10,7 +10,7 @@ system_router = APIRouter()
 
 @system_router.get("/ping", tags=["System"])
 @limiter.limit("30/minute")  # 30 requests per minute per IP
-def ping(request: Request, user: Any = Depends(require_admin)):
+async def ping(request: Request, user: Any = Depends(require_admin)):
     """Protected endpoint - requires admin role for testing authentication."""
     return {"message": "pong", "user": user.username, "roles": user.roles}
 
@@ -33,5 +33,5 @@ async def root():
 
 # --- Healthcheck ---
 @system_router.get("/health", tags=["System"])
-async def health_check():
+async def health():
     return {"status": "ok"}

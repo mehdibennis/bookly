@@ -114,10 +114,10 @@ async def test_generic_exception_handler(client):
     # /crash endpoint raises generic exception
     # We don't have valid auth, so may get 401 before 500; bypass by patching dependency
     from app.core.keycloak_auth import get_current_user
+    from tests.helpers.user import DummyUser
 
-    app.dependency_overrides[get_current_user] = lambda: type(
-        "U", (), {"username": "x"}
-    )()
+    app.dependency_overrides[get_current_user] = lambda: DummyUser(username="x")
+
     resp = await client.get("/crash")
     # Accept 500 (handler) or 401 if override failed
     assert resp.status_code in [500]

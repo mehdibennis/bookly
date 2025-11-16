@@ -93,7 +93,7 @@ async def test_create_author_empty_last_name(author_service):
     """Test creating author with empty last name raises ValueError."""
     author_data = AuthorCreate(first_name="Test", last_name="   ")
 
-    with pytest.raises(ValueError, match="nom.*ne peut pas être vide"):
+    with pytest.raises(ValueError, match="Author's last name cannot be empty."):
         await author_service.create_author(author_data)
 
 
@@ -114,7 +114,7 @@ async def test_create_author_duplicate(author_service, mock_repo):
         photo_url=None,
     )
 
-    with pytest.raises(ConflictException, match="existe déjà"):
+    with pytest.raises(ConflictException, match="already exists"):
         await author_service.create_author(author_data)
 
 
@@ -145,10 +145,10 @@ async def test_get_author_success(author_service, mock_repo):
 @pytest.mark.asyncio
 async def test_get_author_invalid_id(author_service):
     """Test getting author with invalid ID raises ValueError."""
-    with pytest.raises(ValueError, match="ID.*doit être un entier positif"):
+    with pytest.raises(ValueError, match="Author ID.*positive integer"):
         await author_service.get_author(0)
 
-    with pytest.raises(ValueError, match="ID.*doit être un entier positif"):
+    with pytest.raises(ValueError, match="Author ID.*positive integer"):
         await author_service.get_author(-1)
 
 
@@ -213,14 +213,14 @@ async def test_list_authors_by_page(author_service, mock_repo):
 @pytest.mark.asyncio
 async def test_list_authors_invalid_page(author_service):
     """Test listing with invalid page number raises ValueError."""
-    with pytest.raises(ValueError, match="numéro de page doit être >= 1"):
+    with pytest.raises(ValueError, match="Page number must be >= 1."):
         await author_service.list_authors_by_page(page=0, size=10)
 
 
 @pytest.mark.asyncio
 async def test_list_authors_invalid_size(author_service):
     """Test listing with invalid size raises ValueError."""
-    with pytest.raises(ValueError, match="taille de page doit être comprise"):
+    with pytest.raises(ValueError, match="Page size must be between 1 and 100."):
         await author_service.list_authors_by_page(page=1, size=0)
 
 
@@ -268,7 +268,7 @@ async def test_partial_update_author_success(author_service, mock_repo):
 @pytest.mark.asyncio
 async def test_partial_update_author_invalid_id(author_service):
     """Test partial update with invalid ID raises ValueError."""
-    with pytest.raises(ValueError, match="ID.*doit être un entier positif"):
+    with pytest.raises(ValueError, match="Author ID.*positive integer"):
         await author_service.partial_update_author(0, AuthorUpdateData())
 
 
@@ -317,9 +317,7 @@ async def test_partial_update_empty_first_name(author_service, mock_repo):
 async def test_partial_update_empty_last_name(author_service, mock_repo):
     """Test partial update with empty last name raises ValueError."""
     # Value object validates at creation, so we test the validation directly
-    with pytest.raises(
-        ValueError, match="[Ll]ast name.*cannot be empty|nom.*ne peut pas être vide"
-    ):
+    with pytest.raises(ValueError, match="Last name cannot be empty"):
         AuthorUpdateData(last_name="")
         await author_service.partial_update_author(1, AuthorUpdateData(last_name="   "))
 
@@ -351,7 +349,7 @@ async def test_partial_update_name_conflict(author_service, mock_repo):
     mock_repo.get_by_id.return_value = existing_author
     mock_repo.get_by_full_name.return_value = conflicting_author
 
-    with pytest.raises(ConflictException, match="existe déjà"):
+    with pytest.raises(ConflictException, match="already exists"):
         await author_service.partial_update_author(
             1, AuthorUpdateData(first_name="Conflict")
         )
@@ -416,7 +414,7 @@ async def test_delete_author_success(author_service, mock_repo):
 @pytest.mark.asyncio
 async def test_delete_author_invalid_id(author_service):
     """Test deleting author with invalid ID raises ValueError."""
-    with pytest.raises(ValueError, match="ID.*doit être un entier positif"):
+    with pytest.raises(ValueError, match="Author ID.*positive integer"):
         await author_service.delete_author(-1)
 
 
@@ -473,7 +471,7 @@ async def test_update_author_success(author_service, mock_repo):
 @pytest.mark.asyncio
 async def test_update_author_invalid_id(author_service):
     """Update with invalid ID should raise ValueError."""
-    with pytest.raises(ValueError, match="ID.*entier positif"):
+    with pytest.raises(ValueError, match="Author ID.*positive integer"):
         await author_service.partial_update_author(
             0, AuthorUpdateData(first_name="Test")
         )
@@ -524,7 +522,7 @@ async def test_update_author_name_conflict(author_service, mock_repo):
     mock_repo.partial_update.return_value = existing_author
     mock_repo.partial_update.return_value = existing_author
     mock_repo.get_by_full_name.return_value = conflicting_author
-    with pytest.raises(ConflictException, match="existe déjà"):
+    with pytest.raises(ConflictException, match="already exists"):
         await author_service.partial_update_author(
             1, AuthorUpdateData(first_name="New")
         )
@@ -534,9 +532,7 @@ async def test_update_author_name_conflict(author_service, mock_repo):
 async def test_update_author_empty_last_name(author_service, mock_repo):
     """Updating with empty last_name should raise ValueError."""
     # Value object validates at creation
-    with pytest.raises(
-        ValueError, match="[Ll]ast name.*cannot be empty|nom.*ne peut pas être vide"
-    ):
+    with pytest.raises(ValueError, match="Last name cannot be empty"):
         AuthorUpdateData(last_name="   ")
 
 

@@ -169,11 +169,9 @@ async def client():
 @pytest_asyncio.fixture(scope="function")
 async def auth_for_class(request, client):
     from app.core.keycloak_auth import get_current_user
+    from tests.helpers import DummyUser
 
-    class FakeUser:
-        username = "admin"
-
-    app.dependency_overrides[get_current_user] = lambda: FakeUser()
+    app.dependency_overrides[get_current_user] = lambda: DummyUser(username="admin")
     if hasattr(request, "cls") and request.cls is not None:
         request.cls.auth_headers = {"Authorization": "Bearer faketoken"}
     yield
@@ -344,3 +342,32 @@ def mock_keycloak_auth(monkeypatch):
 
     with patch("app.core.keycloak_auth.jwt.decode", return_value=fake_token_info):
         yield
+
+
+@pytest.fixture
+def override_author_service():
+    """Fixture that overrides the `get_author_service` dependency with a
+    lightweight fake implementation returning a small PaginatedResult.
+
+    Use this in integration tests that only need the API layer exercised and
+    don't want to rely on DB setup for authors.
+    """
+    from app.api.dependencies import get_author_service
+    from app.domain.entities import AuthorEntity
+    from app.domain.value_objects import PaginatedResult, PaginationMeta
+
+    class FakeAuthorService:
+        async def list_authors_by_page(self, page, size, search):
+            author = AuthorEntity(id=1, first_name="Jane", last_name="Doe")
+            meta = PaginationMeta(total=1, page=page, size=size, count=1)
+            return PaginatedResult(data=[author], meta=meta)
+
+    _prev = app.dependency_overrides.get(get_author_service)
+    app.dependency_overrides[get_author_service] = lambda: FakeAuthorService()
+    try:
+        yield
+    finally:
+        if _prev is not None:
+            app.dependency_overrides[get_author_service] = _prev
+        else:
+            app.dependency_overrides.pop(get_author_service, None)

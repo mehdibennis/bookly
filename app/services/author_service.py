@@ -61,9 +61,9 @@ class AuthorService:
             dict: { "data": [AuthorEntity...], "meta": { total, page, size, count, last_page, next_page, previous_page } }
         """
         if page < 1:
-            raise ValueError("Le numéro de page doit être >= 1.")
+            raise ValueError("Page number must be >= 1.")
         if size < 1 or size > 100:
-            raise ValueError("La taille de page doit être comprise entre 1 et 100.")
+            raise ValueError("Page size must be between 1 and 100.")
         await self.cache.connect()
         # Use different cache key when search filter is provided to avoid collisions
         if search:
@@ -102,7 +102,7 @@ class AuthorService:
         """
         self._logger.debug("get_author called with author_id=%s", author_id)
         if author_id <= 0:
-            raise ValueError("L'ID de l'auteur doit être un entier positif.")
+            raise ValueError("Author ID must be a positive integer.")
         author = await self.repo.get_by_id(author_id)
         if not author:
             raise NotFoundException(f"Author with id={author_id} not found.")
@@ -132,7 +132,7 @@ class AuthorService:
         existing_author = await self.repo.get_by_full_name(first_name, last_name)
         if existing_author:
             raise ConflictException(
-                f"Un auteur avec le nom '{first_name} {last_name}' existe déjà."
+                f"An author named '{first_name} {last_name}' already exists."
             )
 
         # Create normalized data
@@ -166,7 +166,7 @@ class AuthorService:
             ConflictException: If updating name conflicts with another author.
         """
         if author_id <= 0:
-            raise ValueError("L'ID de l'auteur doit être un entier positif.")
+            raise ValueError("Author ID must be a positive integer.")
 
         # Check if author exists
         existing_author = await self.repo.get_by_id(author_id)
@@ -196,9 +196,9 @@ class AuthorService:
 
         # Validate non-empty fields
         if first_name is not None and not first_name:
-            raise ValueError("Le prénom de l'auteur ne peut pas être vide.")
+            raise ValueError("First name cannot be empty.")
         if last_name is not None and not last_name:
-            raise ValueError("Le nom de l'auteur ne peut pas être vide.")
+            raise ValueError("Last name cannot be empty.")
 
         # Check for name conflicts if name fields are being updated
         if first_name is not None or last_name is not None:
@@ -211,7 +211,7 @@ class AuthorService:
             author_with_name = await self.repo.get_by_full_name(check_first, check_last)
             if author_with_name and author_with_name.id != author_id:
                 raise ConflictException(
-                    f"Un autre auteur avec le nom '{check_first} {check_last}' existe déjà."
+                    f"An author named '{check_first} {check_last}' already exists."
                 )
 
         # Build dict with only the fields that are provided (not None)
@@ -268,7 +268,7 @@ class AuthorService:
             bool: True if deletion succeeded.
         """
         if author_id <= 0:
-            raise ValueError("L'ID de l'auteur doit être un entier positif.")
+            raise ValueError("Author ID must be a positive integer.")
         existing_author = await self.repo.get_by_id(author_id)
         if not existing_author:
             raise NotFoundException(f"Author with id={author_id} not found.")

@@ -9,6 +9,18 @@ from tests.conftest import get_auth_headers, get_rate_limit_headers
 
 @pytest.mark.usefixtures("auth_for_class", "override_keycloak")
 class TestAPI:
+
+    @pytest.mark.asyncio
+    async def test_root_endpoint(self, client):
+        path = reverse(fastapi_app, "root")
+        resp = await client.get(path)
+        assert resp.status_code == 200
+        res = resp.json()
+        assert res["message"] == "Welcome to the bookly API!"
+        assert "version" in res
+        assert "documentation" in res
+        assert "health" in res
+
     @pytest.mark.asyncio
     async def test_login_and_ping(self, client):
         headers = get_auth_headers()
@@ -16,6 +28,26 @@ class TestAPI:
 
         resp = await client.get(path, headers=headers)
         assert resp.status_code == 200
+        res = resp.json()
+        assert res["message"] == "pong"
+        assert "user" in res
+        assert "roles" in res
+
+    @pytest.mark.asyncio
+    async def test_list_authors(self, client, override_author_service):
+        path = reverse(fastapi_app, "authors:list")
+        resp = await client.get(path)
+        assert resp.status_code == 200
+        body = resp.json()
+        assert "data" in body and "meta" in body
+
+    @pytest.mark.asyncio
+    async def test_health_endpoint(self, client):
+        path = reverse(fastapi_app, "health")
+        resp = await client.get(path)
+        assert resp.status_code == 200
+        res = resp.json()
+        assert res["status"] == "ok"
 
     @pytest.mark.asyncio
     async def test_pagination(self, client):

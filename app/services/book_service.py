@@ -87,7 +87,7 @@ class BookService:
         existing_book = await self.repo.get_by_title(book_entity.title)
         if existing_book:
             raise ConflictException(
-                f"Un livre avec le titre '{book_data.title}' existe déjà."
+                f"A book with the title '{book_data.title}' already exists."
             )
 
         # Create normalized data for repository
@@ -129,7 +129,7 @@ class BookService:
             book_with_title = await self.repo.get_by_title(normalized_title)
             if book_with_title and book_with_title.id != book_id:
                 raise ConflictException(
-                    f"Un autre livre avec le titre '{book_data.title}' existe déjà."
+                    f"Another book with the title '{book_data.title}' already exists."
                 )
 
         # Create normalized data for repository
