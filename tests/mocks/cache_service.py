@@ -55,17 +55,12 @@ class MockCacheService(ICacheService):
         key = f"authors:page:{page}:size:{size}"
         self._cache[key] = result
 
-    # Backwards-compatible search variants required by tests that were added
-    # while the cache contract evolved. Provide permissive signatures so
-    # test code and older mocks continue to work without mypy errors.
     async def get_authors_page_search(
         self, page: int, size: int, search: str
     ) -> PaginatedResult[AuthorEntity] | None:
-        # naive search over cached authors pages
-        for k, v in self._cache.items():
-            if k.startswith("authors:page:"):
-                return v
-        return None
+        # Strict behaviour: only consider the production search-aware key.
+        key_primary = f"authors:search:{search}:page:{page}:size:{size}"
+        return self._cache.get(key_primary)
 
     async def set_authors_page_search(
         self,

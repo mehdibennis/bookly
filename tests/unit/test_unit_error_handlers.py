@@ -37,7 +37,7 @@ async def test_validation_exception_handler_single_missing():
     )
     resp = await validation_exception_handler(req, exc)
     assert resp.status_code == 422
-    assert b"requis" in resp.body
+    assert b"required" in resp.body
 
 
 @pytest.mark.asyncio
@@ -51,7 +51,7 @@ async def test_validation_exception_handler_multiple():
     )
     resp = await validation_exception_handler(req, exc)
     assert resp.status_code == 422
-    assert b"Erreurs de validation" in resp.body
+    assert b"Validation errors" in resp.body
 
 
 @pytest.mark.asyncio
@@ -71,7 +71,7 @@ async def test_generic_exception_handler_debug(monkeypatch):
     monkeypatch.setattr("app.core.config.settings.DEBUG", True)
     resp = await generic_exception_handler(req, exc)
     assert resp.status_code == 500
-    assert b"Erreur interne du serveur" in resp.body
+    assert b"Internal server error." in resp.body
     assert b"debug_details" in resp.body
 
 
@@ -83,7 +83,7 @@ async def test_generic_exception_handler_prod(monkeypatch):
     monkeypatch.setattr("app.core.config.settings.DEBUG", False)
     resp = await generic_exception_handler(req, exc)
     assert resp.status_code == 500
-    assert b"Erreur interne du serveur" in resp.body
+    assert b"Internal server error." in resp.body
     assert b"debug_details" not in resp.body
 
 
@@ -104,11 +104,11 @@ async def test_app_exception_handler(client):
 async def test_value_error_handler(client):
     @app.get("/_raise_value")
     async def raise_value():  # pragma: no cover - dynamic wiring
-        raise ValueError("Valeur incorrecte")
+        raise ValueError("Invalid value!")
 
     resp = await client.get("/_raise_value")
     assert resp.status_code == 400
-    assert "Valeur incorrecte" in resp.text
+    assert "Invalid value!" in resp.text
 
 
 @pytest.mark.asyncio

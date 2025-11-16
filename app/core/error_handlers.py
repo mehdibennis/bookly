@@ -12,12 +12,12 @@ from app.core.logging_config import request_id_var
 from app.domain.exceptions import ConflictException as DomainConflictException
 from app.domain.exceptions import NotFoundException as DomainNotFoundException
 
-# Configuration du logger
+# Logger configuration
 logger = logging.getLogger(__name__)
 
 
 async def app_exception_handler(request: Request, exc: AppException):
-    """Handler pour toutes les exceptions métier de l'application."""
+    """Handler for all business exceptions in the application."""
     return JSONResponse(
         status_code=exc.status_code,
         content={
@@ -32,25 +32,23 @@ async def app_exception_handler(request: Request, exc: AppException):
 
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    """Handler pour les erreurs de validation Pydantic (422)."""
-    # Extraire les erreurs de validation
+    """Handler for Pydantic validation errors (422)."""
+    # Extract validation errors
     errors = exc.errors()
 
-    # Construire un message lisible
+    # Build a readable message
     if len(errors) == 1:
         error = errors[0]
         if error["type"] == "missing":
-            message = f"Le champ '{error['loc'][-1]}' est requis."
+            message = f"The field '{error['loc'][-1]}' is required."
         elif error["type"] == "string_type":  # pragma: no cover - rarely hit exactly
-            message = (
-                f"Le champ '{error['loc'][-1]}' doit être une chaîne de caractères."
-            )
+            message = f"The field '{error['loc'][-1]}' must be a string."
         elif error["type"] == "int_parsing":
-            message = f"Le champ '{error['loc'][-1]}' doit être un nombre entier."
+            message = f"The field '{error['loc'][-1]}' must be an integer."
         else:
-            message = f"Erreur de validation sur le champ '{error['loc'][-1]}': {error['msg']}"
+            message = f"Validation error on field '{error['loc'][-1]}': {error['msg']}"
     else:
-        message = f"Erreurs de validation sur {len(errors)} champ(s)."
+        message = f"Validation errors on {len(errors)} field(s)."
 
     error_content = {
         "error": {
@@ -61,9 +59,9 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         }
     }
 
-    # En mode debug, ajouter les détails de validation (en convertissant tout en JSON-serializable)
+    # In debug mode, add validation details (converting everything to JSON-serializable)
     if settings.DEBUG:  # pragma: no cover - debug-only payload
-        # Nettoyer les erreurs pour les rendre JSON-serializable
+        # Clean errors to make them JSON-serializable
         serializable_errors = []
         for error in errors:
             clean_error = {
@@ -74,7 +72,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
                     str(error.get("input")) if error.get("input") is not None else None
                 ),
             }
-            # Ajouter ctx seulement si disponible et convertir les valeurs non-serializable
+            # Add ctx only if available and convert non-serializable values
             if "ctx" in error and error["ctx"]:
                 clean_error["ctx"] = {k: str(v) for k, v in error["ctx"].items()}
             serializable_errors.append(clean_error)
@@ -88,7 +86,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 
 async def value_error_handler(request: Request, exc: ValueError):
-    """Handler pour les erreurs de validation (ValueError)."""
+    """Handler for validation errors (ValueError)."""
     return JSONResponse(
         status_code=400,
         content={
@@ -103,13 +101,13 @@ async def value_error_handler(request: Request, exc: ValueError):
 
 
 async def generic_exception_handler(request: Request, exc: Exception):
-    """Catch-all fallback pour éviter les stacktraces brutes en prod."""
-    # Générer un ID unique pour tracer l'erreur
+    """Catch-all fallback to avoid raw stack traces in production."""
+    # Generate a unique ID to trace the error
     error_id = str(uuid.uuid4())[:8]
 
-    # Logger TOUT en backend (pour traçabilité)
+    # Log EVERYTHING on the backend (for traceability)
     logger.error(
-        f"Erreur interne [{error_id}] - {type(exc).__name__}: {str(exc)}\n"
+        f"Internal error [{error_id}] - {type(exc).__name__}: {str(exc)}\n"
         f"URL: {request.url}\n"
         f"Method: {request.method}\n"
         f"Traceback: {traceback.format_exc()}"
@@ -118,15 +116,15 @@ async def generic_exception_handler(request: Request, exc: Exception):
     # Réponse client (sécurisée)
     error_content = {
         "error": {
-            "message": "Erreur interne du serveur.",
+            "message": "Internal server error.",
             "status_code": 500,
             "path": str(request.url),
-            "error_id": error_id,  # Pour corréler avec les logs
+            "error_id": error_id,  # To correlate with logs
             "request_id": request_id_var.get(),
         }
     }
 
-    # En mode debug, ajouter les détails pour le développement
+    # In debug mode, add details for development
     if settings.DEBUG:  # pragma: no cover - debug-only payload
         error_content["error"]["debug_details"] = str(exc)
         error_content["error"]["traceback"] = traceback.format_exc()
@@ -143,7 +141,7 @@ async def domain_not_found_handler(request: Request, exc: DomainNotFoundExceptio
         status_code=404,
         content={
             "error": {
-                "message": str(exc) or "Ressource non trouvée.",
+                "message": str(exc) or "Resource not found.",
                 "status_code": 404,
                 "path": str(request.url),
                 "request_id": request_id_var.get(),
@@ -158,7 +156,7 @@ async def domain_conflict_handler(request: Request, exc: DomainConflictException
         status_code=409,
         content={
             "error": {
-                "message": str(exc) or "Conflit : ressource déjà existante.",
+                "message": str(exc) or "Conflict: resource already exists.",
                 "status_code": 409,
                 "path": str(request.url),
                 "request_id": request_id_var.get(),

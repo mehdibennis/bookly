@@ -27,3 +27,14 @@ plugins = []
 [tool.isort]
 profile = "black"
 line_length = 120
+
+[tool.pytest.ini_options]
+addopts = "--cov=app --cov-report=term-missing:skip-covered --cov-report=html -n auto"
+asyncio_mode = "strict"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::UserWarning",
+]
+markers = [
+    "perf: performance tests (deselected by default)",
+]
