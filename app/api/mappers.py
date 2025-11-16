@@ -4,9 +4,9 @@ These mappers serve as adapters between the domain layer and the API layer,
 ensuring clean separation of concerns and preventing coupling between layers.
 """
 
-from datetime import date
 from typing import Callable, TypeVar
 
+from app.core.date_utils import parse_date
 from app.domain.entities import AuthorEntity, BookEntity
 from app.domain.value_objects import (
     AuthorCreateData,
@@ -22,20 +22,6 @@ from app.schemas.pagination import PaginatedResponse
 
 T = TypeVar("T")
 D = TypeVar("D")
-
-
-def _parse_date(value: date | str | None) -> date | None:
-    """Parse a date value from Pydantic DTO to domain date."""
-    if value is None:
-        return None
-    if isinstance(value, date):
-        return value
-    if isinstance(value, str):
-        try:
-            return date.fromisoformat(value)
-        except (ValueError, TypeError):
-            return None
-    return None
 
 
 class BookMapper:
@@ -83,8 +69,8 @@ class AuthorMapper:
         return AuthorCreateData(
             first_name=dto.first_name,
             last_name=dto.last_name,
-            birth_date=_parse_date(dto.birth_date),
-            death_date=_parse_date(dto.death_date),
+            birth_date=parse_date(dto.birth_date),
+            death_date=parse_date(dto.death_date),
             nationality=dto.nationality,
             bio=dto.bio,
             photo_url=dto.photo_url,
@@ -96,8 +82,8 @@ class AuthorMapper:
         return AuthorUpdateData(
             first_name=dto.first_name,
             last_name=dto.last_name,
-            birth_date=_parse_date(dto.birth_date),
-            death_date=_parse_date(dto.death_date),
+            birth_date=parse_date(dto.birth_date),
+            death_date=parse_date(dto.death_date),
             nationality=dto.nationality,
             bio=dto.bio,
             photo_url=dto.photo_url,

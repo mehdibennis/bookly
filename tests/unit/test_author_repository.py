@@ -1,10 +1,13 @@
 from datetime import date, datetime
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.domain.value_objects import PaginationParams
-from app.repositories.author_repository import AuthorRepository, _parse_date
+from app.core.date_utils import parse_date
+from app.domain.value_objects import AuthorUpdateData, PaginationParams
+from app.repositories.author_repository import AuthorRepository
 
 
 class FakeResult:
@@ -32,8 +35,9 @@ class FakeResult:
         return self._scalar_one
 
 
-class FakeSession:
+class FakeSession(AsyncMock):
     def __init__(self, results=None):
+        super().__init__(spec=AsyncSession)
         # results is a queue of FakeResult to be returned by execute()
         self._results = list(results or [])
         self.added = []
@@ -76,11 +80,19 @@ def make_fake_author(id=1):
 
 
 def test_parse_date_various_formats():
-    assert _parse_date(None) is None
+    assert parse_date(None) is None
     d = date(2000, 5, 4)
-    assert _parse_date(d) == d
-    assert _parse_date("1990-01-02") == date(1990, 1, 2)
-    assert _parse_date("invalid-date") is None
+    assert parse_date(d) == d
+    assert parse_date("1990-01-02") == date(1990, 1, 2)
+    assert parse_date("invalid-date") is None
+
+
+@pytest.mark.asyncio
+async def test_get_author_by_id_not_found():
+    session = FakeSession(results=[FakeResult(scalar_one_or_none_result=None)])
+    repo = AuthorRepository(session=session)
+    author = await repo.get_by_id(123)
+    assert author is None
 
 
 @pytest.mark.asyncio
@@ -148,7 +160,7 @@ async def test_create_update_partial_delete_flow(monkeypatch):
     repo = AuthorRepository(session=session)
     updated = await repo.update(
         123,
-        SimpleNamespace(
+        AuthorUpdateData(
             first_name=None,
             last_name=None,
             birth_date=None,
@@ -164,7 +176,7 @@ async def test_create_update_partial_delete_flow(monkeypatch):
     db_author = make_fake_author(5)
     session = FakeSession(results=[FakeResult(scalar_one_or_none_result=db_author)])
     repo = AuthorRepository(session=session)
-    data = SimpleNamespace(
+    data = AuthorUpdateData(
         first_name="New",
         last_name="Name",
         birth_date=None,
@@ -181,10 +193,10 @@ async def test_create_update_partial_delete_flow(monkeypatch):
     db_author = make_fake_author(6)
     session = FakeSession(results=[FakeResult(scalar_one_or_none_result=db_author)])
     repo = AuthorRepository(session=session)
-    partial = SimpleNamespace(
+    partial = AuthorUpdateData(
         first_name="P",
         last_name=None,
-        birth_date="1990-02-02",
+        birth_date=parse_date("1990-02-02"),
         death_date=None,
         nationality=None,
         bio=None,

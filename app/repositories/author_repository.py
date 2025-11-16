@@ -8,6 +8,7 @@ from typing import cast
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.date_utils import parse_date
 from app.db.models.author_model import Author
 from app.domain.entities import AuthorEntity
 from app.domain.repositories import IAuthorRepository
@@ -20,29 +21,6 @@ from app.domain.value_objects import (
 )
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def _parse_date(value: date_type | str | None) -> date_type | None:
-    """Parse input into a date object.
-
-    Accepts:
-    - datetime.date: returned as-is
-    - ISO string (YYYY-MM-DD): parsed via fromisoformat
-    - None/invalid: returns None
-    """
-    if value is None:
-        return None
-    # If already a date object, return it
-    if isinstance(value, date_type):
-        return value
-    # If a string, try ISO format
-    if isinstance(value, str) and value:
-        try:
-            return date_type.fromisoformat(value)
-        except (ValueError, TypeError):
-            return None
-    # Any other type is unsupported
-    return None
 
 
 class AuthorRepository(IAuthorRepository):
@@ -131,8 +109,8 @@ class AuthorRepository(IAuthorRepository):
         new_author = Author(
             first_name=author_data.first_name,
             last_name=author_data.last_name,
-            birth_date=_parse_date(author_data.birth_date),
-            death_date=_parse_date(author_data.death_date),
+            birth_date=parse_date(author_data.birth_date),
+            death_date=parse_date(author_data.death_date),
             nationality=author_data.nationality,
             bio=author_data.bio,
             photo_url=author_data.photo_url,
@@ -160,9 +138,9 @@ class AuthorRepository(IAuthorRepository):
         if author_data.last_name is not None:
             setattr(db_author, "last_name", author_data.last_name)
         if author_data.birth_date is not None:
-            setattr(db_author, "birth_date", _parse_date(author_data.birth_date))
+            setattr(db_author, "birth_date", parse_date(author_data.birth_date))
         if author_data.death_date is not None:
-            setattr(db_author, "death_date", _parse_date(author_data.death_date))
+            setattr(db_author, "death_date", parse_date(author_data.death_date))
         if author_data.nationality is not None:
             setattr(db_author, "nationality", author_data.nationality)
         if author_data.bio is not None:
@@ -203,7 +181,7 @@ class AuthorRepository(IAuthorRepository):
             if not hasattr(db_author, field):
                 continue
             if field in {"birth_date", "death_date"}:
-                setattr(db_author, field, _parse_date(value))
+                setattr(db_author, field, parse_date(value))
             else:
                 setattr(db_author, field, value)
 

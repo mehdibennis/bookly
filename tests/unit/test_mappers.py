@@ -5,7 +5,8 @@ Tests conversion between API DTOs and domain objects.
 
 from datetime import date, datetime
 
-from app.api.mappers import AuthorMapper, BookMapper, PaginationMapper, _parse_date
+from app.api.mappers import AuthorMapper, BookMapper, PaginationMapper
+from app.core.date_utils import parse_date
 from app.domain.entities import AuthorEntity, BookEntity
 from app.domain.value_objects import PaginatedResult, PaginationMeta
 from app.schemas.author_schema import AuthorCreate, AuthorUpdate
@@ -13,33 +14,33 @@ from app.schemas.book_schema import BookCreate, BookUpdate
 
 
 class TestParseDateHelper:
-    """Tests for _parse_date helper function."""
+    """Tests for parse_date helper function."""
 
     def test_parse_date_none(self):
         """Parse None should return None."""
-        assert _parse_date(None) is None
+        assert parse_date(None) is None
 
     def test_parse_date_already_date(self):
         """Parse date object should return same date."""
         test_date = date(2023, 5, 15)
-        assert _parse_date(test_date) == test_date
+        assert parse_date(test_date) == test_date
 
     def test_parse_date_valid_iso_string(self):
         """Parse valid ISO string should return date."""
-        result = _parse_date("2023-05-15")
+        result = parse_date("2023-05-15")
         assert result == date(2023, 5, 15)
 
     def test_parse_date_invalid_string(self):
         """Parse invalid string should return None."""
-        assert _parse_date("not-a-date") is None
+        assert parse_date("not-a-date") is None
 
     def test_parse_date_empty_string(self):
         """Parse empty string should return None."""
-        assert _parse_date("") is None
+        assert parse_date("") is None
 
     def test_parse_date_invalid_type(self):
         """Parse invalid type should return None."""
-        assert _parse_date(12345) is None  # type: ignore
+        assert parse_date(12345) is None  # type: ignore
 
 
 class TestBookMapper:

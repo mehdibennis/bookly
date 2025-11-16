@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from app.repositories.author_repository import _parse_date
+from app.core.date_utils import parse_date
 from app.schemas.author_schema import AuthorCreate, AuthorUpdate
 
 
@@ -35,13 +35,13 @@ def test_author_update_invalid_death_date():
 
 def test_parse_date_unsupported_type_returns_none():
     # Passing an unsupported type (e.g., dict) should return None gracefully
-    assert _parse_date({"not": "a date"}) is None
+    assert parse_date({"not": "a date"}) is None
 
 
 def test_parse_date_iso_string_valid():
     # Valid ISO date string should be parsed to a date object
     from datetime import date
 
-    parsed = _parse_date("2020-01-02")
+    parsed = parse_date("2020-01-02")
     assert isinstance(parsed, date)
     assert parsed == date(2020, 1, 2)

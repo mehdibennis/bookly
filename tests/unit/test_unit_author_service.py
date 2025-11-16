@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from app.core.date_utils import parse_date
 from app.domain.entities import AuthorEntity
 from app.domain.exceptions import ConflictException, NotFoundException
 from app.domain.value_objects import AuthorUpdateData, PaginatedResult, PaginationMeta
@@ -83,7 +84,7 @@ async def test_create_author_empty_first_name(author_service):
     """Test creating author with empty first name raises ValueError."""
     author_data = AuthorCreate(first_name="   ", last_name="Test")
 
-    with pytest.raises(ValueError, match="prénom.*ne peut pas être vide"):
+    with pytest.raises(ValueError, match="Author's first name cannot be empty."):
         await author_service.create_author(author_data)
 
 
@@ -308,9 +309,7 @@ async def test_partial_update_no_fields(author_service, mock_repo):
 async def test_partial_update_empty_first_name(author_service, mock_repo):
     """Test partial update with empty first name raises ValueError."""
     # Value object validates at creation, so we test the validation directly
-    with pytest.raises(
-        ValueError, match="[Ff]irst name.*cannot be empty|prénom.*ne peut pas être vide"
-    ):
+    with pytest.raises(ValueError, match="[Ff]irst name.*cannot be empty"):
         AuthorUpdateData(first_name="   ")
 
 
@@ -454,14 +453,17 @@ async def test_update_author_success(author_service, mock_repo):
         first_name="New",
         last_name="Name",
         nationality="British",
-        birth_date="1900-01-01",
+        birth_date=parse_date("1900-01-01"),
         death_date=None,
         bio="Bio",
         photo_url=None,
     )
 
     update_data = AuthorUpdateData(
-        first_name="New", nationality="British", birth_date="1900-01-01", bio="Bio"
+        first_name="New",
+        nationality="British",
+        birth_date=parse_date("1900-01-01"),
+        bio="Bio",
     )
 
     await author_service.partial_update_author(1, update_data)
@@ -491,9 +493,7 @@ async def test_update_author_not_found(author_service, mock_repo):
 async def test_update_author_empty_first_name(author_service, mock_repo):
     """Updating with empty first_name should raise ValueError."""
     # Value object validates at creation
-    with pytest.raises(
-        ValueError, match="[Ff]irst name.*cannot be empty|prénom.*ne peut pas être vide"
-    ):
+    with pytest.raises(ValueError, match="[Ff]irst name.*cannot be empty"):
         AuthorUpdateData(first_name="   ")
 
 
@@ -572,7 +572,7 @@ async def test_update_author_preserves_unchanged_fields(author_service, mock_rep
         first_name="Original",
         last_name="Author",
         nationality="French",
-        birth_date="1900-01-01",
+        birth_date=parse_date("1900-01-01"),
         death_date=None,
         bio="Original bio",
         photo_url="url",
