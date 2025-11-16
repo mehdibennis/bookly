@@ -17,7 +17,6 @@ omit =
     app/db/models/user_model.py
     # Temporary coverage omits for Keycloak integration (some will be re-enabled as tests are added)
     app/core/keycloak_admin.py
-    app/core/keycloak_auth.py
     app/core/config.py
     app/core/error_handlers.py
 parallel = true
