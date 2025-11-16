@@ -1,5 +1,6 @@
 """Async SQLAlchemy session and engine setup for the application."""
 
+import logging
 import os
 
 import sqlalchemy
@@ -30,12 +31,8 @@ if _worker:  # pragma: no cover - xdist worker initialization
             )
             conn.commit()
     except Exception as exc:  # pragma: no cover - defensive import-time guard
-        import sys
-
-        print(
-            f"[app.db.session] warning: could not initialize per-worker schema ({_worker}): {exc}",
-            file=sys.stderr,
-        )
+        logger = logging.getLogger(__name__)
+        logger.warning("could not initialize per-worker schema (%s): %s", _worker, exc)
 
 
 # Asynchronous Session (type-safe factory)

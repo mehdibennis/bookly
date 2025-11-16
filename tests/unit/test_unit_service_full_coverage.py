@@ -155,4 +155,5 @@ async def test_repository_update_delete_edge_returns(test_author_id):
         )
         assert updated_none is None
         # delete non existent -> False
-        assert await repo.delete(999999) is False
+        deleted_result = await repo.delete(999999)
+        assert deleted_result is False
