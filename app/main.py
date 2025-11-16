@@ -29,7 +29,7 @@ from app.core.sentry_integration import setup_sentry
 from app.domain.exceptions import ConflictException as DomainConflictException
 from app.domain.exceptions import NotFoundException as DomainNotFoundException
 
-# Configuration du logging centralisée
+# Centralized logging configuration
 setup_logging(
     level=config.settings.LOG_LEVEL,
     to_file=config.settings.LOG_TO_FILE,
@@ -41,54 +41,53 @@ app = FastAPI(
     title="Bookly API",
     version="1.0.0",
     description="""
-    **Bookly** est une API REST moderne pour la gestion de livres avec authentification Keycloak.
+    **Bookly** is a Rest API is a modern REST API for book management with Keycloak authentication.
 
-    ## Fonctionnalités principales
+    ## Main Features
 
-    * **Authentification sécurisée** : Intégration Keycloak pour JWT et gestion des rôles
-    * **CRUD complet** : Création, lecture, mise à jour et suppression de livres
-    * **Pagination intelligente** : Navigation efficace dans les collections
-    * **Cache Redis** : Performance optimisée pour les listes paginées
-    * **Rate limiting** : Protection contre les abus (SlowAPI)
-    * **Validation robuste** : Pydantic pour la validation des données
-    * **Gestion d'erreurs centralisée** : Handlers personnalisés pour toutes les exceptions
+    * **Secure Authentication**: Keycloak integration for JWT and role management
+    * **Full CRUD**: Create, read, update, and delete books
+    * **Intelligent Pagination**: Efficient navigation through collections
+    * **Redis Cache**: Optimized performance for paginated lists
+    * **Rate Limiting**: Protection against abuse (SlowAPI)
+    * **Robust Validation**: Pydantic for data validation
+    * **Centralized Error Handling**: Custom handlers for all exceptions
 
     ## Architecture
 
-    * **Domain-Driven Design** : Séparation claire entre domaine, services, repositories
-    * **Unit of Work Pattern** : Gestion transactionnelle cohérente
-    * **Async/Await** : Performance maximale avec SQLAlchemy async
-    * **Tests exhaustifs** : 99% de couverture de code
+    * **Domain-Driven Design** : Clear separation between domain, services, repositories
+    * **Unit of Work Pattern** : Consistent transactional management
+    * **Async/Await** : Maximum performance with async SQLAlchemy
+    * **Comprehensive Tests** : 98% code coverage
 
-    ## Démarrage rapide
-
-    1. Obtenez un token JWT depuis votre serveur Keycloak
-    2. Utilisez le token dans le header `Authorization: Bearer <token>`
-    3. Explorez les endpoints de gestion des livres sous `/api/v1/books/` et auteurs sous `/api/v1/authors/`
+    ## Quick Start
+    1. Obtain a JWT token from your Keycloak server
+    2. Use the token in the `Authorization: Bearer <token>` header
+    3. Explore the book management endpoints under `/api/v1/books/` and author endpoints under `/api/v1/authors/`
     """,
-    contact={"name": "Équipe Bookly", "email": "support@bookly.example.com"},
+    contact={"name": "Bookly Team", "email": "support@bookly.example.com"},
     license_info={"name": "MIT License", "url": "https://opensource.org/licenses/MIT"},
     openapi_tags=[
         {
             "name": "books",
-            "description": "Gestion complète des livres (CRUD, pagination, recherche)",
+            "description": "Full management of books (CRUD, pagination, search)",
         },
         {
             "name": "authors",
-            "description": "Gestion des auteurs (CRUD, pagination)",
+            "description": "Full management of authors (CRUD, pagination)",
         },
         {
             "name": "System",
-            "description": "Endpoints système (healthcheck, monitoring)",
+            "description": "System endpoints (healthcheck, monitoring)",
         },
     ],
 )
 
 
-# Exemple d'utilisation de pyinstrument pour profiler l'app
-# Pour profiler, lance en local :
+# ExaExample of using pyinstrument to profile the app
+# To profile, run locally:
 #   pyinstrument -m uvicorn app.main:app --host 0.0.0.0 --port 8000
-# Un rapport HTML ou texte sera généré à la fin de l'exécution
+# An HTML or text report will be generated at the end of the run
 
 
 def rate_limit_key(request: Request) -> str:
@@ -138,7 +137,7 @@ setup_sentry(
     profiles_sample_rate=config.settings.SENTRY_PROFILES_SAMPLE_RATE,
 )
 
-# Handlers globaux pour une gestion d'erreurs cohérente
+# Global Handlers for consistent error management
 app.add_exception_handler(
     RequestValidationError, cast(HandlerType, validation_exception_handler)
 )  # 422
@@ -154,7 +153,6 @@ app.add_exception_handler(
 app.add_exception_handler(ValueError, cast(HandlerType, value_error_handler))  # 400
 app.add_exception_handler(Exception, generic_exception_handler)  # 500
 
-# Python 3.11 ExceptionGroup can bypass standard Exception handlers through middlewares
 try:
     ExceptionGroup
 except NameError:  # pragma: no cover - Python <3.11 fallback
@@ -163,17 +161,20 @@ except NameError:  # pragma: no cover - Python <3.11 fallback
         pass
 
 
-app.add_exception_handler(ExceptionGroup, generic_exception_handler)  # 500 (grouped)
+app.add_exception_handler(
+    ExceptionGroup,
+    generic_exception_handler,  # pragma: no cover requires-python = ">= 3.11"
+)  # 500 (grouped)
 
 
 @app.get("/ping", tags=["System"])
-@limiter.limit("30/minute")  # 30 requêtes par minute par IP
+@limiter.limit("30/minute")  # 30 requests per minute per IP
 def ping(request: Request, user=Depends(require_admin)):
     """Protected endpoint - requires admin role for testing authentication."""
     return {"message": "pong", "user": user.username, "roles": user.roles}
 
 
-# Endpoint de test pour le handler d'exception générique (protégé par JWT)
+# Test endpoint for the generic exception handler (protected by JWT)
 @app.get("/crash")
 async def crash(user=Depends(get_current_user)):
     raise Exception("boom")

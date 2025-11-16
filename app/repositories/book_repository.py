@@ -31,6 +31,43 @@ class BookRepository(IBookRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
 
+    def _model_to_entity(self, book: Book) -> BookEntity:
+        """Convert SQLAlchemy model to domain entity."""
+        author_ids = [cast(int, a.id) for a in (book.authors or [])]
+        author_details = []
+
+        for author in book.authors or []:
+            author_details.append(
+                {
+                    "id": author.id,
+                    "first_name": author.first_name,
+                    "last_name": author.last_name,
+                    "birth_date": (
+                        author.birth_date.isoformat() if author.birth_date else None
+                    ),
+                    "death_date": (
+                        author.death_date.isoformat() if author.death_date else None
+                    ),
+                    "nationality": author.nationality,
+                    "bio": author.bio,
+                    "photo_url": author.photo_url,
+                    "created_at": (
+                        author.created_at.isoformat() if author.created_at else None
+                    ),
+                    "updated_at": (
+                        author.updated_at.isoformat() if author.updated_at else None
+                    ),
+                }
+            )
+
+        return BookEntity(
+            id=cast(int, book.id),
+            title=cast(str, book.title),
+            authors=author_ids,
+            authors_details=author_details,
+            authors_number=len(author_ids),
+        )
+
     async def get_by_id(self, book_id: int) -> BookEntity | None:
         """Fetch a single book by its ID, return a domain entity or None."""
         stmt = (
@@ -146,40 +183,3 @@ class BookRepository(IBookRepository):
 
         await self.session.delete(book)
         return True
-
-    def _model_to_entity(self, book: Book) -> BookEntity:
-        """Convert SQLAlchemy model to domain entity."""
-        author_ids = [cast(int, a.id) for a in (book.authors or [])]
-        author_details = []
-
-        for author in book.authors or []:
-            author_details.append(
-                {
-                    "id": author.id,
-                    "first_name": author.first_name,
-                    "last_name": author.last_name,
-                    "birth_date": (
-                        author.birth_date.isoformat() if author.birth_date else None
-                    ),
-                    "death_date": (
-                        author.death_date.isoformat() if author.death_date else None
-                    ),
-                    "nationality": author.nationality,
-                    "bio": author.bio,
-                    "photo_url": author.photo_url,
-                    "created_at": (
-                        author.created_at.isoformat() if author.created_at else None
-                    ),
-                    "updated_at": (
-                        author.updated_at.isoformat() if author.updated_at else None
-                    ),
-                }
-            )
-
-        return BookEntity(
-            id=cast(int, book.id),
-            title=cast(str, book.title),
-            authors=author_ids,
-            authors_details=author_details,
-            authors_number=len(author_ids),
-        )

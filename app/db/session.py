@@ -9,10 +9,10 @@ from sqlalchemy.orm import declarative_base
 
 from app.core.config import settings
 
-# Base pour les modèles (declare early to avoid circular imports)
+# Base for ORM models (declare early to avoid circular imports)
 Base = declarative_base()
 
-# Engine asynchrone
+# Asynchronous Engine
 engine = create_async_engine(settings.DATABASE_URL, echo=settings.DEBUG, future=True)
 
 # If running under pytest-xdist, create a per-worker test schema and
@@ -28,7 +28,7 @@ if _worker:  # pragma: no cover - xdist worker initialization
         conn.commit()
 
 
-# Session asynchrone (type-safe factory)
+# Asynchronous Session (type-safe factory)
 async_session = async_sessionmaker(engine, expire_on_commit=False)
 
 

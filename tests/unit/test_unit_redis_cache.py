@@ -27,7 +27,7 @@ async def test_redis_cache_set_authors_page_exception(monkeypatch):
     cache = RedisCache("redis://test")
     fake = FakeRedis()
     fake.fail_set = True
-    cache.redis = fake
+    monkeypatch.setattr(cache, "redis", fake)
 
     # Should not raise despite set failing
     await cache.set_authors_page(1, 10, {"data": [], "meta": {}})
@@ -44,7 +44,7 @@ async def test_redis_cache_get_miss_and_hit(monkeypatch):
 
     cache = rc_mod.RedisCache("redis://test")
     fake = FakeRedis()
-    cache.redis = fake
+    monkeypatch.setattr(cache, "redis", fake)
 
     # Miss
     val = await cache.get_books_page(1, 5)

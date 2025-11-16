@@ -17,15 +17,15 @@ router = APIRouter(prefix="/authors", tags=["authors"])
     "/",
     response_model=PaginatedResponse[Author],
     name="authors:list",
-    summary="Liste paginée des auteurs",
+    summary="Get a paginated list of authors",
     description="""
-    Récupère la liste complète des auteurs avec pagination.
+    Retrieves the complete list of authors with pagination.
 
-    **Paramètres de pagination :**
-    - `page` : Numéro de la page (>=1)
-    - `size` : Nombre d'éléments par page (1-100)
+    **Pagination parameters:**
+    - `page` : Page number (>=1)
+    - `size` : Number of items per page (1-100)
 
-    **Exemple de réponse :**
+    **Example response:**
     ```json
     {
       "data": [
@@ -44,23 +44,23 @@ router = APIRouter(prefix="/authors", tags=["authors"])
     }
     ```
 
-    **Note :** Cet endpoint est public (pas d'authentification requise).
+    **Note:** This endpoint is public (no authentication required).
     """,
-    response_description="Liste paginée d'auteurs avec métadonnées de pagination",
+    response_description="Paginated list of authors with pagination metadata",
     responses={
-        200: {"description": "Auteurs récupérés avec succès"},
+        200: {"description": "Authors retrieved successfully"},
     },
 )
 async def list_authors(
-    page: int = Query(1, ge=1, description="Numéro de page (>=1)", example=1),
-    size: int = Query(
-        10, ge=1, le=100, description="Taille de page (1-100)", example=10
+    page: int = Query(1, ge=1, description="Page number (>=1)", example=1),
+    size: int = Query(10, ge=1, le=100, description="Page size (1-100)", example=10),
+    search: str | None = Query(
+        None, description="Text filter on first/last name (ILIKE)"
     ),
-    search: str | None = Query(None, description="Filtre texte sur prénom/nom (ILIKE)"),
     session: AsyncSession = Depends(get_session),
     service: AuthorService = Depends(get_author_service),
 ):
-    """Récupère la liste paginée des auteurs (pagination page/size), avec filtre optionnel 'search'."""
+    """Retrieve a paginated list of authors (pagination page/size), with optional 'search' filter."""
     domain_result = await service.list_authors_by_page(page, size, search)
     # Convert domain PaginatedResult -> API PaginatedResponse using mapper
     return PaginationMapper.result_to_response(
@@ -73,20 +73,19 @@ async def list_authors(
     "/{author_id}",
     response_model=Author,
     name="authors:get",
-    summary="Récupérer un auteur par ID",
+    summary="Get an author by ID",
     description="""
-    Récupère les détails complets d'un auteur spécifique.
+    Retrieves the full details of a specific author.
 
-    **Authentification requise :** Token JWT valide
-
-    **Erreurs possibles :**
-    - `401 Unauthorized` : Token manquant ou invalide
-    - `404 Not Found` : Auteur inexistant
+    **Authentication required:** Valid JWT token
+    **Possible errors:**
+    - `401 Unauthorized` : Missing or invalid token
+    - `404 Not Found` : Author does not exist
     """,
     responses={
-        404: {"description": "Auteur non trouvé"},
-        401: {"description": "Non authentifié"},
-        200: {"description": "Auteur récupéré avec succès"},
+        404: {"description": "Author not found"},
+        401: {"description": "Unauthorized"},
+        200: {"description": "Author retrieved successfully"},
     },
 )
 async def get_author(
@@ -95,7 +94,7 @@ async def get_author(
     user=Depends(get_current_user),
     service: AuthorService = Depends(get_author_service),
 ):
-    """Récupère un auteur par son ID."""
+    """Retrieve an author by their ID."""
     author = await service.get_author(author_id)
     return Author.model_validate(author.__dict__)  # pragma: no cover
 
@@ -106,26 +105,26 @@ async def get_author(
     response_model=Author,
     status_code=status.HTTP_201_CREATED,
     name="authors:create",
-    summary="Créer un nouvel auteur",
+    summary="Create a new author",
     description="""
-    Crée un nouvel auteur dans la collection.
+    Create a new author in the collection.
 
-    **Authentification requise :** Token JWT valide
+    **Authentication required:** Valid JWT token
 
-    **Règles de validation :**
-    - Le prénom et le nom ne peuvent pas être vides
-    - Les noms sont normalisés (capitalisation automatique)
-    - Les doublons (même prénom + nom) sont interdits
+    **Validation rules:**
+    - First name and last name cannot be empty
+    - Names are normalized (automatic capitalization)
+    - Duplicates (same first name + last name) are not allowed
 
-    **Erreurs possibles :**
-    - `400 Bad Request` : Données invalides
-    - `409 Conflict` : Auteur avec ce nom existe déjà
+    **Possible errors:**
+    - `400 Bad Request` : Invalid data
+    - `409 Conflict` : Author with this name already exists
     """,
     responses={
-        400: {"description": "Données invalides"},
-        409: {"description": "Conflit : auteur existant"},
-        401: {"description": "Non authentifié"},
-        201: {"description": "Auteur créé avec succès"},
+        400: {"description": "Invalid data"},
+        409: {"description": "Conflict: existing author"},
+        401: {"description": "Unauthorized"},
+        201: {"description": "Author created successfully"},
     },
 )
 async def create_author(
@@ -134,7 +133,7 @@ async def create_author(
     user=Depends(get_current_user),
     service: AuthorService = Depends(get_author_service),
 ):
-    """Crée un nouvel auteur."""
+    """Create a new author."""
     author_data = AuthorMapper.create_dto_to_domain(author_in)
     author = await service.create_author(author_data)
     return Author.model_validate(author.__dict__)  # pragma: no cover
@@ -145,32 +144,31 @@ async def create_author(
     "/{author_id}",
     response_model=Author,
     name="authors:update",
-    summary="Mettre à jour partiellement un auteur (PATCH)",
+    summary="Partially update an author (PATCH)",
     description="""
-    Met à jour partiellement les informations d'un auteur existant.
+    Partially updates the information of an existing author.
 
-    **Authentification requise :** Token JWT valide
+    **Authentication required:** Valid JWT token
+    **Partial update:** All fields are optional. Only the provided fields will be updated.
 
-    **Mise à jour partielle :** Tous les champs sont optionnels. Seuls les champs fournis seront mis à jour.
-
-    **Exemple de requête :**
+    **Example request:**
     ```json
     {
       "first_name": "George",
       "nationality": "British"
     }
     ```
-    Les autres champs (last_name, birth_date, etc.) ne seront pas modifiés.
+    Other fields (last_name, birth_date, etc.) will not be modified.
 
-    - `401 Unauthorized` : Token manquant ou invalide
-    - `404 Not Found` : Auteur inexistant
-    - `409 Conflict` : Nom en conflit avec un autre auteur
+    - `401 Unauthorized` : Missing or invalid token
+    - `404 Not Found` : Author does not exist
+    - `409 Conflict` : Name conflicts with another author
     """,
     responses={
-        200: {"description": "Auteur mis à jour avec succès"},
-        401: {"description": "Non authentifié"},
-        404: {"description": "Auteur non trouvé"},
-        409: {"description": "Conflit de nom avec un autre auteur"},
+        200: {"description": "Author updated successfully"},
+        401: {"description": "Unauthorized"},
+        404: {"description": "Author not found"},
+        409: {"description": "Name conflicts with another author"},
     },
 )
 async def partial_update_author(
@@ -190,19 +188,19 @@ async def partial_update_author(
     "/{author_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     name="authors:delete",
-    summary="Supprimer un auteur",
+    summary="Delete an author",
     description="""
-    Supprime définitivement un auteur de la collection.
+    Permanently deletes an author from the collection.
 
-    **Authentification requise :** Token JWT valide
+    **Authentication required:** Valid JWT token
 
-    **Erreurs possibles :**
-    - `404 Not Found` : Auteur inexistant
+    **Possible errors:**
+    - `404 Not Found` : Author does not exist
     """,
     responses={
-        204: {"description": "Auteur supprimé avec succès"},
-        404: {"description": "Auteur non trouvé"},
-        401: {"description": "Non authentifié"},
+        204: {"description": "Author deleted successfully"},
+        404: {"description": "Author not found"},
+        401: {"description": "Unauthorized"},
     },
 )
 async def delete_author(

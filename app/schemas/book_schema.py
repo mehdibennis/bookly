@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel
 
 
@@ -7,6 +9,8 @@ class BookBase(BaseModel):
     authors: list[int]
     authors_details: list[dict] | None = None
     authors_number: int | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
 
 # --- For creation ---
@@ -26,9 +30,3 @@ class Book(BookBase):
 
     class ConfigDict:
         from_attributes = True  # ✅ replace orm_mode=True (Pydantic v2)
-
-
-class BookWithDetails(Book):
-    created_at: str | None = None
-    updated_at: str | None = None
-    # authors already included in BookBase

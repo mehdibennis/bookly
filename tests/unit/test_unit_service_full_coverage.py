@@ -4,7 +4,6 @@ import pytest
 
 from app.db.session import get_session
 from app.db.unit_of_work import SqlAlchemyUnitOfWork
-from app.domain.entities import BookEntity
 from app.domain.exceptions import ConflictException, NotFoundException
 from app.domain.value_objects import AuthorCreateData, BookCreateData, BookUpdateData
 from app.main import app
@@ -69,6 +68,8 @@ async def test_update_book_branches(test_author_id):
         b2 = await service.create_book(
             BookCreateData(title=f"Seed2 {uuid4()}", authors=[test_author_id])
         )
+        assert b1.id is not None
+
         # Empty title
         with pytest.raises(ValueError):
             await service.partial_update_book(b1.id, BookUpdateData(title="   "))
@@ -79,12 +80,14 @@ async def test_update_book_branches(test_author_id):
         with pytest.raises(ValueError):
             await service.partial_update_book(b1.id, BookUpdateData(authors=[0]))
         # Successful partial update (authors only) -> create a second author
+        new_author_id = None
         async for session in app.dependency_overrides[get_session]():
             arepo = AuthorRepository(session)
             author2 = await arepo.create(
                 AuthorCreateData(first_name=f"Temp{uuid4()}", last_name="Author")
             )
             new_author_id = author2.id
+        assert new_author_id is not None
         updated = await service.partial_update_book(
             b1.id, BookUpdateData(authors=[new_author_id])
         )
@@ -104,6 +107,7 @@ async def test_delete_book_paths(test_author_id):
         b = await service.create_book(
             BookCreateData(title=f"Del {uuid4()}", authors=[test_author_id])
         )
+        assert b.id is not None
         assert await service.delete_book(b.id) is True
         # Now not found
         with pytest.raises(NotFoundException):
@@ -147,7 +151,7 @@ async def test_repository_update_delete_edge_returns(test_author_id):
     async for repo, service in _make_service():
         # update non existent returns None (service wraps earlier but repo alone used here)
         updated_none = await repo.update(
-            999999, BookEntity(id=999999, title="X", authors=[test_author_id])
+            999999, BookUpdateData(title="X", authors=[test_author_id])
         )
         assert updated_none is None
         # delete non existent -> False

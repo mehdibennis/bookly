@@ -15,15 +15,14 @@ router = APIRouter(prefix="/books", tags=["books"])
     "/",
     response_model=PaginatedResponse[Book],
     name="books:list",
-    summary="Liste paginée des livres",
+    summary="Paginated list of books",
     description="""
-    Récupère la liste complète des livres avec pagination.
+    Get the complete list of books with pagination.
 
-    **Paramètres de pagination :**
-    - `page` : Numéro de la page (>=1)
-    - `size` : Nombre d'éléments par page (1-100)
-
-    **Exemple de réponse :**
+    **Pagination parameters :**
+    - `page` : Page number (>=1)
+    - `size` : Number of items per page (1-100)
+    **Example response :**
     ```json
     {
       "data": [
@@ -41,21 +40,19 @@ router = APIRouter(prefix="/books", tags=["books"])
     }
     ```
 
-    **Note :** Cet endpoint est public (pas d'authentification requise).
+    **Note :** This endpoint is public (no authentication required).
     """,
-    response_description="Liste paginée de livres avec métadonnées de pagination",
+    response_description="Paginated list of books with pagination metadata",
     responses={
-        200: {"description": "Livres récupérés avec succès"},
+        200: {"description": "Books retrieved successfully"},
     },
 )
 async def list_books(
-    page: int = Query(1, ge=1, description="Numéro de page (>=1)", example=1),
-    size: int = Query(
-        10, ge=1, le=100, description="Taille de page (1-100)", example=10
-    ),
+    page: int = Query(1, ge=1, description="Page number (>=1)", example=1),
+    size: int = Query(10, ge=1, le=100, description="Page size (1-100)", example=10),
     book_service: BookService = Depends(get_book_service),
 ):
-    """Récupère la liste paginée des livres (pagination page/size)."""
+    """Get the paginated list of books (pagination page/size)."""
     pagination = PaginationMapper.params_from_query(page, size)
     # PaginationMapper returns a PaginationParams value object; pass its
     # primitive fields to the service which expects (page, size) ints.
@@ -68,20 +65,20 @@ async def list_books(
     "/{book_id}",
     response_model=Book,
     name="books:get",
-    summary="Récupérer un livre par ID",
+    summary="Get a book by ID",
     description="""
-    Récupère les détails complets d'un livre spécifique.
+    Get the full details of a specific book.
 
-    **Authentification requise :** Token JWT valide
+    **Authentication required:** Valid JWT token
 
-    **Erreurs possibles :**
-    - `401 Unauthorized` : Token manquant ou invalide
-    - `404 Not Found` : Livre inexistant
+    **Possible errors:**
+    - `401 Unauthorized` : Missing or invalid token
+    - `404 Not Found` : Book does not exist
     """,
     responses={
-        404: {"description": "Livre non trouvé"},
-        401: {"description": "Non authentifié"},
-        200: {"description": "Livre récupéré avec succès"},
+        404: {"description": "Book not found"},
+        401: {"description": "Unauthorized"},
+        200: {"description": "Book retrieved successfully"},
     },
 )
 async def get_book(
@@ -89,7 +86,7 @@ async def get_book(
     book_service: BookService = Depends(get_book_service),
     user=Depends(get_current_user),
 ):
-    """Récupère un livre par son ID."""
+    """Get a book by its ID."""
     book = await book_service.get_book(book_id)
     return BookMapper.entity_to_dto(book)
 
@@ -100,26 +97,24 @@ async def get_book(
     response_model=Book,
     status_code=status.HTTP_201_CREATED,
     name="books:create",
-    summary="Créer un nouveau livre",
+    summary="Create a new book",
     description="""
-    Crée un nouveau livre dans la collection.
+    Create a new book in the collection.
 
-    **Authentification requise :** Token JWT valide
-
-    **Règles de validation :**
-    - Le titre et l'auteur ne peuvent pas être vides
-    - Le titre est normalisé (capitalisation automatique)
-    - Les titres en double sont interdits
-
-    **Erreurs possibles :**
-    - `400 Bad Request` : Données invalides
-    - `409 Conflict` : Livre avec ce titre existe déjà
+    **Authentication required:** Valid JWT token
+    **Validation rules:**
+    - Title and author cannot be empty
+    - Title is normalized (automatic capitalization)
+    - Duplicate titles are not allowed
+    **Possible errors:**
+    - `400 Bad Request` : Invalid data
+    - `409 Conflict` : Book with this title already exists
     """,
     responses={
-        201: {"description": "Livre créé avec succès"},
-        400: {"description": "Données invalides"},
-        409: {"description": "Conflit : livre existant"},
-        401: {"description": "Non authentifié"},
+        201: {"description": "Book created successfully"},
+        400: {"description": "Invalid data"},
+        409: {"description": "Conflict: existing book"},
+        401: {"description": "Unauthorized"},
     },
 )
 async def create_book(
@@ -127,7 +122,7 @@ async def create_book(
     book_service: BookService = Depends(get_book_service),
     user=Depends(get_current_user),
 ):
-    """Crée un nouveau livre."""
+    """Create a new book."""
     book_data = BookMapper.create_dto_to_domain(book_in)
     book = await book_service.create_book(book_data)
     return BookMapper.entity_to_dto(book)
@@ -162,7 +157,7 @@ async def patch_book(
     book_service: BookService = Depends(get_book_service),
     user=Depends(get_current_user),
 ):
-    """Met à jour partiellement un livre (PATCH semantics)."""
+    """Partially update a book (PATCH semantics)."""
     book_data = BookMapper.update_dto_to_domain(book_in)
     book = await book_service.partial_update_book(book_id, book_data)
     return BookMapper.entity_to_dto(book)
@@ -173,19 +168,18 @@ async def patch_book(
     "/{book_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     name="books:delete",
-    summary="Supprimer un livre",
+    summary="Delete a book",
     description="""
-    Supprime définitivement un livre de la collection.
+    Permanently delete a book from the collection.
 
-    **Authentification requise :** Token JWT valide
-
-    **Erreurs possibles :**
-    - `404 Not Found` : Livre inexistant
+    **Authentication required:** Valid JWT token
+    **Possible errors:**
+    - `404 Not Found` : Book does not exist
     """,
     responses={
-        204: {"description": "Livre supprimé avec succès"},
-        404: {"description": "Livre non trouvé"},
-        401: {"description": "Non authentifié"},
+        204: {"description": "Book deleted successfully"},
+        404: {"description": "Book not found"},
+        401: {"description": "Unauthorized"},
     },
 )
 async def delete_book(
@@ -193,5 +187,5 @@ async def delete_book(
     book_service: BookService = Depends(get_book_service),
     user=Depends(get_current_user),
 ):
-    """Supprime un livre."""
+    """Delete a book."""
     await book_service.delete_book(book_id)

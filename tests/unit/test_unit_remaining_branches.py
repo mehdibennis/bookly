@@ -2,10 +2,9 @@ import pytest
 
 from app.db.session import get_session
 from app.db.unit_of_work import SqlAlchemyUnitOfWork
-from app.domain.entities import BookEntity
+from app.domain.value_objects import BookCreateData
 from app.main import app
 from app.repositories.book_repository import BookRepository
-from app.schemas.book_schema import BookCreate
 from app.services.book_service import BookService
 from tests.mocks.cache_service import MockCacheService
 
@@ -24,7 +23,7 @@ async def test_unit_of_work_rollback_path(test_author_id):
 
         unique_title = f"Rollback Test {uuid.uuid4()}"
         b = await service.create_book(
-            BookCreate(title=unique_title, authors=[test_author_id])
+            BookCreateData(title=unique_title, authors=[test_author_id])
         )
         assert b.id is not None
 
@@ -36,8 +35,7 @@ async def test_unit_of_work_rollback_path(test_author_id):
             async with uow:
                 # Perform an operation then raise
                 await repo.create(
-                    BookEntity(
-                        id=None,
+                    BookCreateData(
                         title=f"Temp Title {uuid.uuid4()}",
                         authors=[test_author_id],
                     )

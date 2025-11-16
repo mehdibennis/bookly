@@ -120,9 +120,9 @@ class AuthorService:
             ConflictException: If an author with the same normalized name exists.
         """
         if not author_in.first_name or not author_in.first_name.strip():
-            raise ValueError("Le prénom de l'auteur ne peut pas être vide.")
+            raise ValueError("Author's first name cannot be empty.")
         if not author_in.last_name or not author_in.last_name.strip():
-            raise ValueError("Le nom de l'auteur ne peut pas être vide.")
+            raise ValueError("Author's last name cannot be empty.")
 
         # Normalize names
         first_name = author_in.first_name.strip().title()
