@@ -3,7 +3,7 @@ Unit tests for AuthorService.
 Tests business logic and validation rules.
 """
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -14,21 +14,7 @@ from app.domain.value_objects import AuthorUpdateData, PaginatedResult, Paginati
 from app.schemas.author_schema import AuthorCreate
 from app.services.author_service import AuthorService
 
-
-@pytest.fixture
-def mock_repo():
-    """Mock AuthorRepository."""
-    repo = AsyncMock()
-    return repo
-
-
-@pytest.fixture
-def mock_uow():
-    """Mock Unit of Work."""
-    uow = MagicMock()
-    uow.__aenter__ = AsyncMock(return_value=None)
-    uow.__aexit__ = AsyncMock(return_value=None)
-    return uow
+# `mock_uow` fixture moved to tests/conftest.py to avoid duplication across unit tests
 
 
 @pytest.fixture

@@ -2,7 +2,7 @@ import asyncio
 import logging
 import os
 import random
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -371,3 +371,28 @@ def override_author_service():
             app.dependency_overrides[get_author_service] = _prev
         else:
             app.dependency_overrides.pop(get_author_service, None)
+
+
+@pytest.fixture
+def mock_repo():
+    """Project-wide mock repository fixture for unit tests.
+
+    Many unit tests create a simple AsyncMock repository. Exposing a
+    shared `mock_repo` fixture in `conftest.py` avoids duplication and keeps
+    unit tests concise.
+    """
+    repo = AsyncMock()
+    return repo
+
+
+@pytest.fixture
+def mock_uow():
+    """Project-wide mock unit-of-work fixture for unit tests.
+
+    Provides a MagicMock implementing async context manager methods so
+    unit tests can `async with uow:` without touching a real DB.
+    """
+    uow = MagicMock()
+    uow.__aenter__ = AsyncMock(return_value=None)
+    uow.__aexit__ = AsyncMock(return_value=None)
+    return uow

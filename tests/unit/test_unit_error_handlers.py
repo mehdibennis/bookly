@@ -1,5 +1,7 @@
+from typing import cast
+
 import pytest
-from fastapi import status
+from fastapi import Request, status
 from fastapi.exceptions import RequestValidationError
 
 from app.core.error_handlers import (
@@ -20,7 +22,7 @@ class DummyRequest:
 
 @pytest.mark.asyncio
 async def test_app_exception_handler_direct():
-    req = DummyRequest()
+    req = cast(Request, DummyRequest())
     exc = AppException("Custom error", status_code=418)
     resp = await app_exception_handler(req, exc)
     assert resp.status_code == 418

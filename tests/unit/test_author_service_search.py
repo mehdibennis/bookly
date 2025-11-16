@@ -1,24 +1,10 @@
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 
 from app.domain.entities import AuthorEntity
 from app.domain.value_objects import PaginatedResult, PaginationMeta, PaginationParams
 from app.services.author_service import AuthorService
-
-
-@pytest.fixture
-def mock_repo():
-    repo = AsyncMock()
-    return repo
-
-
-@pytest.fixture
-def mock_uow():
-    uow = MagicMock()
-    uow.__aenter__ = AsyncMock(return_value=None)
-    uow.__aexit__ = AsyncMock(return_value=None)
-    return uow
 
 
 @pytest.fixture
