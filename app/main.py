@@ -1,14 +1,14 @@
 from collections.abc import Awaitable, Callable
 from typing import cast
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
-from slowapi.util import get_remote_address
 from starlette.responses import Response
 
+from app.api.system import system_router
 from app.api.v1.routes import admin_users as users
 from app.api.v1.routes import authors, books
 from app.core import config
@@ -21,7 +21,7 @@ from app.core.error_handlers import (
     value_error_handler,
 )
 from app.core.exceptions import AppException
-from app.core.keycloak_auth import get_current_user, require_admin
+from app.core.limiter import limiter
 from app.core.logging_config import setup_logging
 from app.core.middleware import AccessLogMiddleware, RequestIdMiddleware
 from app.core.observability import setup_prometheus, setup_tracing
@@ -90,18 +90,9 @@ app = FastAPI(
 # An HTML or text report will be generated at the end of the run
 
 
-def rate_limit_key(request: Request) -> str:
-    if config.settings.TRUST_PROXY:
-        forwarded = request.headers.get("X-Forwarded-For")
-        if forwarded:
-            return forwarded.split(",")[0].strip()
-    # Fallback to SlowAPI helper (client host)
-    return get_remote_address(request)
-
-
-limiter = Limiter(key_func=rate_limit_key)
-# Throttling
+# Use the shared limiter from app.core.limiter
 app.state.limiter = limiter
+
 HandlerType = Callable[[Request, Exception], Response | Awaitable[Response]]
 app.add_exception_handler(
     RateLimitExceeded, cast(HandlerType, _rate_limit_exceeded_handler)
@@ -114,6 +105,7 @@ if config.settings.LOG_ACCESS:
 app.include_router(books.router, prefix="/api/v1", tags=["books"])
 app.include_router(authors.router, prefix="/api/v1", tags=["authors"])
 app.include_router(users.router, prefix="/api/v1", tags=["users"])
+app.include_router(system_router, prefix="", tags=["System"])
 
 # Observability (optional)
 setup_prometheus(
@@ -165,36 +157,6 @@ app.add_exception_handler(
     ExceptionGroup,
     generic_exception_handler,  # pragma: no cover requires-python = ">= 3.11"
 )  # 500 (grouped)
-
-
-@app.get("/ping", tags=["System"])
-@limiter.limit("30/minute")  # 30 requests per minute per IP
-def ping(request: Request, user=Depends(require_admin)):
-    """Protected endpoint - requires admin role for testing authentication."""
-    return {"message": "pong", "user": user.username, "roles": user.roles}
-
-
-# Test endpoint for the generic exception handler (protected by JWT)
-@app.get("/crash")
-async def crash(user=Depends(get_current_user)):
-    raise Exception("boom")
-
-
-# --- Root endpoint ---
-@app.get("/", tags=["System"])
-async def root():
-    return {
-        "message": "Welcome to the bookly API!",
-        "version": "1.0.0",
-        "documentation": "/docs",
-        "health": "/health",
-    }
-
-
-# --- Healthcheck ---
-@app.get("/health", tags=["System"])
-async def health_check():
-    return {"status": "ok"}
 
 
 # --- Entrypoint (for local runs) ---

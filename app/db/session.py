@@ -22,10 +22,20 @@ _worker = os.getenv("PYTEST_XDIST_WORKER")
 if _worker:  # pragma: no cover - xdist worker initialization
     _worker_schema = settings.TEST_SCHEMA
     # Use a synchronous engine for DDL to ensure CREATE SCHEMA executes cleanly
-    sync_engine = sqlalchemy.create_engine(settings.SYNC_DATABASE_URL)
-    with sync_engine.connect() as conn:
-        conn.execute(sqlalchemy.text(f"CREATE SCHEMA IF NOT EXISTS {_worker_schema}"))
-        conn.commit()
+    try:
+        sync_engine = sqlalchemy.create_engine(settings.SYNC_DATABASE_URL)
+        with sync_engine.connect() as conn:
+            conn.execute(
+                sqlalchemy.text(f"CREATE SCHEMA IF NOT EXISTS {_worker_schema}")
+            )
+            conn.commit()
+    except Exception as exc:  # pragma: no cover - defensive import-time guard
+        import sys
+
+        print(
+            f"[app.db.session] warning: could not initialize per-worker schema ({_worker}): {exc}",
+            file=sys.stderr,
+        )
 
 
 # Asynchronous Session (type-safe factory)
