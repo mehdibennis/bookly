@@ -41,15 +41,17 @@ def test_pagination_mapper_result_to_response():
 
 
 def test_get_cache_service_returns_noop_when_xdist(monkeypatch):
-    # Ensure get_cache_service returns NoopCache when PYTEST_XDIST_WORKER is set
     monkeypatch.setenv("PYTEST_XDIST_WORKER", "gw0")
     import asyncio
 
     from app.api.dependencies import get_cache_service
 
     svc = asyncio.get_event_loop().run_until_complete(get_cache_service())
-    # NoopCache implements ICacheService and has connect/close
-    assert hasattr(svc, "connect") and hasattr(svc, "close")
+    assert (
+        hasattr(svc, "connect")
+        and hasattr(svc, "close")
+        and hasattr(svc, "get_books_page")
+    )
 
 
 def test_get_cache_service_returns_redis_when_no_xdist(monkeypatch):

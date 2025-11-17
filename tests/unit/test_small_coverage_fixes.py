@@ -19,10 +19,16 @@ def test_require_realm_mgmt_without_roles_raises(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_redis_cache_methods_no_connection_do_not_raise():
+async def test_redis_cache_methods_no_connection_do_not_raise(monkeypatch):
     # Create a RedisCacheService but do not call connect() so _redis stays None.
+    # Ensure any attempt to create a real redis client is intercepted by
+    # providing a fake `redis.asyncio` module in sys.modules that exposes
+    # the `from_url` factory. This is robust across redis package versions.
+
+    monkeypatch.setattr("redis.asyncio.from_url", lambda url, **kw: None)
     cache = RedisCacheService(redis_url="redis://127.0.0.1:6379/0", ttl=1)
 
+    assert isinstance(cache, RedisCacheService)
     # Methods should return None or simply not raise when no connection exists
     assert await cache.get_books_page(1, 10) is None
     assert await cache.get_authors_page(1, 10) is None

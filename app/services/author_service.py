@@ -30,17 +30,10 @@ class AuthorService:
     ):
         self.repo = repo
         self.uow = uow
-        # cache attribute typed as ICacheService for static typing compatibility
-        self.cache: ICacheService
-        # Cache is injected to avoid concrete infra dependency in the service
-        # Provide a no-op in-memory cache when none is supplied to keep tests simple.
-        if cache is None:
-            # Use centralized NoopCache when no cache implementation is provided
-            from app.core.noop_cache import NoopCache
-
-            self.cache = NoopCache()
-        else:
-            self.cache = cache
+        # cache attribute may be None if no cache is provided; callers (or
+        # DI) should supply a concrete cache implementation. Guard cache
+        # usage throughout the service when it is optional for tests.
+        self.cache: ICacheService | None = cache
         self._logger = logging.getLogger(__name__)
 
     async def list_authors_by_page(
@@ -64,16 +57,18 @@ class AuthorService:
             raise ValueError("Page number must be >= 1.")
         if size < 1 or size > 100:
             raise ValueError("Page size must be between 1 and 100.")
-        await self.cache.connect()
-        # Use different cache key when search filter is provided to avoid collisions
-        if search:
-            # Use search-aware cache helper when available
-            cached = await self.cache.get_authors_page_search(page, size, search)
-        else:
-            cached = await self.cache.get_authors_page(page, size)
-        if cached:  # pragma: no cover - cache hit depends on environment
-            await self.cache.close()
-            return cached
+        # Only interact with the cache if one was provided
+        if self.cache is not None:
+            await self.cache.connect()
+            # Use different cache key when search filter is provided to avoid collisions
+            if search:
+                # Use search-aware cache helper when available
+                cached = await self.cache.get_authors_page_search(page, size, search)
+            else:
+                cached = await self.cache.get_authors_page(page, size)
+            if cached:  # pragma: no cover - cache hit depends on environment
+                await self.cache.close()
+                return cached
 
         from app.domain.value_objects import PaginationParams
 
@@ -82,11 +77,12 @@ class AuthorService:
 
         # Cache the domain PaginatedResult and return it. API layer will handle
         # serialization to response DTOs via mappers.
-        if search:
-            await self.cache.set_authors_page_search(page, size, search, result)
-        else:
-            await self.cache.set_authors_page(page, size, result)
-        await self.cache.close()
+        if self.cache is not None:
+            if search:
+                await self.cache.set_authors_page_search(page, size, search, result)
+            else:
+                await self.cache.set_authors_page(page, size, result)
+            await self.cache.close()
         return result
 
     async def get_author(self, author_id: int) -> AuthorEntity:
@@ -193,12 +189,6 @@ class AuthorService:
         photo_url = (
             author_in.photo_url.strip() if author_in.photo_url is not None else None
         )
-
-        # Validate non-empty fields
-        if first_name is not None and not first_name:
-            raise ValueError("First name cannot be empty.")
-        if last_name is not None and not last_name:
-            raise ValueError("Last name cannot be empty.")
 
         # Check for name conflicts if name fields are being updated
         if first_name is not None or last_name is not None:

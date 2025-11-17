@@ -14,23 +14,16 @@ from app.domain.value_objects import PaginatedResult, PaginationMeta
 
 
 @pytest.fixture
-def mock_redis():
-    """Create a mock Redis client."""
-    mock = AsyncMock()
-    mock.ping = AsyncMock()
-    mock.get = AsyncMock(return_value=None)
-    mock.setex = AsyncMock()
-    mock.delete = AsyncMock()
-    mock.keys = AsyncMock(return_value=[])
-    return mock
+def cache_service(mock_redis_client):
+    """Create a cache service with mocked Redis client provided by conftest.
 
-
-@pytest.fixture
-def cache_service(mock_redis):
-    """Create a cache service with mocked Redis."""
-    with patch("redis.asyncio.from_url", return_value=mock_redis):
+    The low-level client fixture is `mock_redis_client` (centralized in
+    `tests/conftest.py`). Tests that need to inspect redis client calls
+    can also request that fixture directly.
+    """
+    with patch("redis.asyncio.from_url", return_value=mock_redis_client):
         service = RedisCacheService(redis_url="redis://localhost:6379", ttl=3600)
-        service._redis = mock_redis  # Set directly to avoid async connect
+        service._redis = mock_redis_client  # Set directly to avoid async connect
         return service
 
 
@@ -38,14 +31,14 @@ class TestRedisCacheServiceConnection:
     """Tests for cache service connection."""
 
     @pytest.mark.asyncio
-    async def test_connect_success(self, mock_redis):
+    async def test_connect_success(self, mock_redis_client):
         """Test successful Redis connection."""
-        with patch("redis.asyncio.from_url", return_value=mock_redis):
+        with patch("redis.asyncio.from_url", return_value=mock_redis_client):
             service = RedisCacheService(redis_url="redis://localhost:6379")
             await service.connect()
 
             assert service._redis is not None
-            mock_redis.ping.assert_awaited_once()
+            mock_redis_client.ping.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_connect_failure(self):
@@ -62,15 +55,15 @@ class TestRedisCacheServiceConnection:
             assert service._redis is None
 
     @pytest.mark.asyncio
-    async def test_connect_only_once(self, mock_redis):
+    async def test_connect_only_once(self, mock_redis_client):
         """Test that connect doesn't create multiple connections."""
-        with patch("redis.asyncio.from_url", return_value=mock_redis):
+        with patch("redis.asyncio.from_url", return_value=mock_redis_client):
             service = RedisCacheService(redis_url="redis://localhost:6379")
             await service.connect()
             await service.connect()  # Second call
 
             # from_url should be called only once
-            mock_redis.ping.assert_awaited_once()
+            mock_redis_client.ping.assert_awaited_once()
 
 
 class TestRedisCacheServiceBooks:
@@ -84,17 +77,17 @@ class TestRedisCacheServiceBooks:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_get_books_page_cache_miss(self, cache_service, mock_redis):
+    async def test_get_books_page_cache_miss(self, cache_service, mock_redis_client):
         """Test getting books page with cache miss."""
-        mock_redis.get.return_value = None
+        mock_redis_client.get.return_value = None
 
         result = await cache_service.get_books_page(1, 10)
 
         assert result is None
-        mock_redis.get.assert_awaited_once_with("books:page:1:size:10")
+        mock_redis_client.get.assert_awaited_once_with("books:page:1:size:10")
 
     @pytest.mark.asyncio
-    async def test_get_books_page_cache_hit(self, cache_service, mock_redis):
+    async def test_get_books_page_cache_hit(self, cache_service, mock_redis_client):
         """Test getting books page with cache hit."""
         import json
 
@@ -115,7 +108,7 @@ class TestRedisCacheServiceBooks:
                 "count": 1,
             },
         }
-        mock_redis.get.return_value = json.dumps(cached_data)
+        mock_redis_client.get.return_value = json.dumps(cached_data)
 
         result = await cache_service.get_books_page(1, 10)
 
@@ -127,9 +120,9 @@ class TestRedisCacheServiceBooks:
         assert result.meta.page == 1
 
     @pytest.mark.asyncio
-    async def test_get_books_page_json_error(self, cache_service, mock_redis):
+    async def test_get_books_page_json_error(self, cache_service, mock_redis_client):
         """Test getting books page with JSON decode error."""
-        mock_redis.get.return_value = "invalid json"
+        mock_redis_client.get.return_value = "invalid json"
 
         result = await cache_service.get_books_page(1, 10)
 
@@ -148,7 +141,7 @@ class TestRedisCacheServiceBooks:
         await service.set_books_page(1, 10, result)
 
     @pytest.mark.asyncio
-    async def test_set_books_page_success(self, cache_service, mock_redis):
+    async def test_set_books_page_success(self, cache_service, mock_redis_client):
         """Test setting books page successfully."""
         books = [
             BookEntity(
@@ -164,15 +157,40 @@ class TestRedisCacheServiceBooks:
 
         await cache_service.set_books_page(1, 10, result)
 
-        mock_redis.setex.assert_awaited_once()
-        call_args = mock_redis.setex.call_args
+        mock_redis_client.setex.assert_awaited_once()
+        call_args = mock_redis_client.setex.call_args
         assert call_args[0][0] == "books:page:1:size:10"
         assert call_args[0][1] == 3600  # TTL
 
     @pytest.mark.asyncio
-    async def test_set_books_page_redis_error(self, cache_service, mock_redis):
+    async def test_set_books_page_success_dict(self, cache_service, mock_redis_client):
+        """Test setting books page successfully with dict."""
+        books = [
+            BookEntity(
+                id=1,
+                title="Test Book",
+                authors=[1, 2],
+                authors_details=[{"id": 1, "name": "Author 1"}],
+                authors_number=2,
+            )
+        ]
+        meta = PaginationMeta(total=10, page=1, size=10, count=1)
+        result = {
+            "data": [cache_service._book_entity_to_dict(b) for b in books],
+            "meta": meta.__dict__,
+        }
+
+        await cache_service.set_books_page(1, 10, result)
+
+        mock_redis_client.setex.assert_awaited_once()
+        call_args = mock_redis_client.setex.call_args
+        assert call_args[0][0] == "books:page:1:size:10"
+        assert call_args[0][1] == 3600  # TTL
+
+    @pytest.mark.asyncio
+    async def test_set_books_page_redis_error(self, cache_service, mock_redis_client):
         """Test setting books page with Redis error."""
-        mock_redis.setex.side_effect = Exception("Redis error")
+        mock_redis_client.setex.side_effect = Exception("Redis error")
 
         books = [BookEntity(id=1, title="Test", authors=[1])]
         meta = PaginationMeta(total=1, page=1, size=10, count=1)
@@ -190,19 +208,23 @@ class TestRedisCacheServiceBooks:
         await service.invalidate_books_cache()
 
     @pytest.mark.asyncio
-    async def test_invalidate_books_cache_no_keys(self, cache_service, mock_redis):
+    async def test_invalidate_books_cache_no_keys(
+        self, cache_service, mock_redis_client
+    ):
         """Test invalidating books cache with no keys."""
-        mock_redis.keys.return_value = []
+        mock_redis_client.keys.return_value = []
 
         await cache_service.invalidate_books_cache()
 
-        mock_redis.keys.assert_awaited_once_with("books:page:*")
-        mock_redis.delete.assert_not_awaited()
+        mock_redis_client.keys.assert_awaited_once_with("books:page:*")
+        mock_redis_client.delete.assert_not_awaited()
 
     @pytest.mark.asyncio
-    async def test_invalidate_books_cache_with_keys(self, cache_service, mock_redis):
+    async def test_invalidate_books_cache_with_keys(
+        self, cache_service, mock_redis_client
+    ):
         """Test invalidating books cache with multiple keys."""
-        mock_redis.keys.return_value = [
+        mock_redis_client.keys.return_value = [
             "books:page:1:size:10",
             "books:page:2:size:10",
             "books:page:3:size:10",
@@ -210,14 +232,16 @@ class TestRedisCacheServiceBooks:
 
         await cache_service.invalidate_books_cache()
 
-        mock_redis.delete.assert_awaited_once()
-        call_args = mock_redis.delete.call_args[0]
+        mock_redis_client.delete.assert_awaited_once()
+        call_args = mock_redis_client.delete.call_args[0]
         assert len(call_args) == 3
 
     @pytest.mark.asyncio
-    async def test_invalidate_books_cache_redis_error(self, cache_service, mock_redis):
+    async def test_invalidate_books_cache_redis_error(
+        self, cache_service, mock_redis_client
+    ):
         """Test invalidating books cache with Redis error."""
-        mock_redis.keys.side_effect = Exception("Redis error")
+        mock_redis_client.keys.side_effect = Exception("Redis error")
 
         # Should not raise error (logged as warning)
         await cache_service.invalidate_books_cache()
@@ -234,17 +258,17 @@ class TestRedisCacheServiceAuthors:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_get_authors_page_cache_miss(self, cache_service, mock_redis):
+    async def test_get_authors_page_cache_miss(self, cache_service, mock_redis_client):
         """Test getting authors page with cache miss."""
-        mock_redis.get.return_value = None
+        mock_redis_client.get.return_value = None
 
         result = await cache_service.get_authors_page(1, 10)
 
         assert result is None
-        mock_redis.get.assert_awaited_with("authors:page:1:size:10")
+        mock_redis_client.get.assert_awaited_with("authors:page:1:size:10")
 
     @pytest.mark.asyncio
-    async def test_get_authors_page_cache_hit(self, cache_service, mock_redis):
+    async def test_get_authors_page_cache_hit(self, cache_service, mock_redis_client):
         """Test getting authors page with cache hit."""
         import json
 
@@ -270,7 +294,7 @@ class TestRedisCacheServiceAuthors:
                 "count": 1,
             },
         }
-        mock_redis.get.return_value = json.dumps(cached_data)
+        mock_redis_client.get.return_value = json.dumps(cached_data)
 
         result = await cache_service.get_authors_page(1, 10)
 
@@ -282,7 +306,9 @@ class TestRedisCacheServiceAuthors:
         assert result.meta.total == 10
 
     @pytest.mark.asyncio
-    async def test_get_authors_page_with_null_dates(self, cache_service, mock_redis):
+    async def test_get_authors_page_with_null_dates(
+        self, cache_service, mock_redis_client
+    ):
         """Test getting authors page with null dates."""
         import json
 
@@ -303,7 +329,7 @@ class TestRedisCacheServiceAuthors:
             ],
             "meta": {"total": 1, "page": 1, "size": 10, "count": 1},
         }
-        mock_redis.get.return_value = json.dumps(cached_data)
+        mock_redis_client.get.return_value = json.dumps(cached_data)
 
         result = await cache_service.get_authors_page(1, 10)
 
@@ -325,7 +351,7 @@ class TestRedisCacheServiceAuthors:
         await service.set_authors_page(1, 10, result)
 
     @pytest.mark.asyncio
-    async def test_set_authors_page_success(self, cache_service, mock_redis):
+    async def test_set_authors_page_success(self, cache_service, mock_redis_client):
         """Test setting authors page successfully."""
         authors = [
             AuthorEntity(
@@ -346,23 +372,57 @@ class TestRedisCacheServiceAuthors:
 
         await cache_service.set_authors_page(2, 5, result)
 
-        mock_redis.setex.assert_awaited_once()
-        call_args = mock_redis.setex.call_args
+        mock_redis_client.setex.assert_awaited_once()
+        call_args = mock_redis_client.setex.call_args
         assert call_args[0][0] == "authors:page:2:size:5"
         assert call_args[0][1] == 3600  # TTL
 
     @pytest.mark.asyncio
-    async def test_invalidate_authors_cache_with_keys(self, cache_service, mock_redis):
+    async def test_set_authors_page_success_dict(
+        self, cache_service, mock_redis_client
+    ):
+        """Test setting authors page successfully with dict."""
+        authors = [
+            AuthorEntity(
+                id=1,
+                first_name="John",
+                last_name="Doe",
+                birth_date=date(1950, 1, 1),
+                death_date=date(2020, 12, 31),
+                nationality="USA",
+                bio="Test bio",
+                photo_url="http://example.com/photo.jpg",
+                created_at=datetime(2023, 1, 1, 12, 0, 0),
+                updated_at=datetime(2023, 1, 2, 12, 0, 0),
+            )
+        ]
+        meta = PaginationMeta(total=10, page=2, size=5, count=1)
+        result = {
+            "data": [cache_service._author_entity_to_dict(a) for a in authors],
+            "meta": meta.__dict__,
+        }
+
+        await cache_service.set_authors_page(2, 5, result)
+
+        mock_redis_client.setex.assert_awaited_once()
+        call_args = mock_redis_client.setex.call_args
+        assert call_args[0][0] == "authors:page:2:size:5"
+        assert call_args[0][1] == 3600  # TTL
+
+    @pytest.mark.asyncio
+    async def test_invalidate_authors_cache_with_keys(
+        self, cache_service, mock_redis_client
+    ):
         """Test invalidating authors cache with multiple keys."""
-        mock_redis.keys.return_value = [
+        mock_redis_client.keys.return_value = [
             "authors:page:1:size:10",
             "authors:page:2:size:10",
         ]
 
         await cache_service.invalidate_authors_cache()
 
-        mock_redis.delete.assert_awaited_once()
-        call_args = mock_redis.delete.call_args[0]
+        mock_redis_client.delete.assert_awaited_once()
+        call_args = mock_redis_client.delete.call_args[0]
         assert len(call_args) == 2
 
 
@@ -490,11 +550,11 @@ class TestRedisCacheServiceErrorHandling:
     async def test_get_authors_page_redis_error(self):
         """Test get_authors_page handles Redis errors gracefully."""
         service = RedisCacheService(redis_url="redis://localhost:6379")
-        mock_redis = AsyncMock()
-        service._redis = mock_redis
+        mock_redis_client = AsyncMock()
+        service._redis = mock_redis_client
 
         # Make Redis.get() raise an exception
-        mock_redis.get.side_effect = Exception("Redis connection error")
+        mock_redis_client.get.side_effect = Exception("Redis connection error")
 
         result = await service.get_authors_page(1, 10)
 
@@ -505,11 +565,11 @@ class TestRedisCacheServiceErrorHandling:
     async def test_set_authors_page_redis_error(self):
         """Test set_authors_page handles Redis errors gracefully."""
         service = RedisCacheService(redis_url="redis://localhost:6379")
-        mock_redis = AsyncMock()
-        service._redis = mock_redis
+        mock_redis_client = AsyncMock()
+        service._redis = mock_redis_client
 
         # Make Redis.setex() raise an exception
-        mock_redis.setex.side_effect = Exception("Redis connection error")
+        mock_redis_client.setex.side_effect = Exception("Redis connection error")
 
         result = PaginatedResult(
             data=[],
@@ -524,11 +584,11 @@ class TestRedisCacheServiceErrorHandling:
     async def test_invalidate_authors_cache_redis_error(self):
         """Test invalidate_authors_cache handles Redis errors gracefully."""
         service = RedisCacheService(redis_url="redis://localhost:6379")
-        mock_redis = AsyncMock()
-        service._redis = mock_redis
+        mock_redis_client = AsyncMock()
+        service._redis = mock_redis_client
 
         # Make Redis.keys() raise an exception
-        mock_redis.keys.side_effect = Exception("Redis connection error")
+        mock_redis_client.keys.side_effect = Exception("Redis connection error")
 
         # Should not crash
         await service.invalidate_authors_cache()
@@ -538,11 +598,11 @@ class TestRedisCacheServiceErrorHandling:
     async def test_get_books_page_redis_error(self):
         """Test get_books_page handles Redis errors gracefully."""
         service = RedisCacheService(redis_url="redis://localhost:6379")
-        mock_redis = AsyncMock()
-        service._redis = mock_redis
+        mock_redis_client = AsyncMock()
+        service._redis = mock_redis_client
 
         # Make Redis.get() raise an exception
-        mock_redis.get.side_effect = Exception("Redis connection error")
+        mock_redis_client.get.side_effect = Exception("Redis connection error")
 
         result = await service.get_books_page(1, 10)
 
@@ -553,11 +613,12 @@ class TestRedisCacheServiceErrorHandling:
     async def test_set_books_page_redis_error(self):
         """Test set_books_page handles Redis errors gracefully."""
         service = RedisCacheService(redis_url="redis://localhost:6379")
-        mock_redis = AsyncMock()
-        service._redis = mock_redis
+
+        mock_redis_client = AsyncMock()
+        service._redis = mock_redis_client
 
         # Make Redis.setex() raise an exception
-        mock_redis.setex.side_effect = Exception("Redis connection error")
+        mock_redis_client.setex.side_effect = Exception("Redis connection error")
 
         result = PaginatedResult(
             data=[],
@@ -572,11 +633,11 @@ class TestRedisCacheServiceErrorHandling:
     async def test_invalidate_books_cache_redis_error(self):
         """Test invalidate_books_cache handles Redis errors gracefully."""
         service = RedisCacheService(redis_url="redis://localhost:6379")
-        mock_redis = AsyncMock()
-        service._redis = mock_redis
+        mock_redis_client = AsyncMock()
+        service._redis = mock_redis_client
 
         # Make Redis.keys() raise an exception
-        mock_redis.keys.side_effect = Exception("Redis connection error")
+        mock_redis_client.keys.side_effect = Exception("Redis connection error")
 
         # Should not crash
         await service.invalidate_books_cache()

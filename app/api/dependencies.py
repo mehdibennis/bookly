@@ -20,18 +20,9 @@ from app.services.book_service import BookService
 
 async def get_cache_service() -> ICacheService:
     """Get configured cache service."""
-    # When running tests in parallel (pytest-xdist) we avoid using a shared
-    # Redis instance to prevent cross-worker cache contamination which leads
-    # to flaky integration tests. If the PYTEST_XDIST_WORKER env var is set,
-    # return a no-op cache implementation.
-    import os
-
-    if os.getenv("PYTEST_XDIST_WORKER"):
-        # Use centralized NoopCache implementation to avoid duplication
-        from app.core.noop_cache import NoopCache
-
-        return NoopCache()
-
+    # Always return the configured Redis-backed cache service. Tests and
+    # test fixtures are responsible for patching/mocking the backing
+    # implementation when needed (e.g. pytest autouse mocks used in tests).
     return RedisCacheService(settings.REDIS_URL)
 
 
