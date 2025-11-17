@@ -121,40 +121,6 @@ class AuthorRepository(IAuthorRepository):
         await self.session.flush()
         return self._model_to_entity(new_author)
 
-    async def update(
-        self, author_id: int, author_data: AuthorUpdateData
-    ) -> AuthorEntity | None:
-        """Update an existing author; returns the updated entity or None if missing."""
-        stmt = select(Author).where(Author.id == author_id)
-        result = await self.session.execute(stmt)
-        db_author = result.scalar_one_or_none()
-
-        if not db_author:
-            return None
-
-        # Update only fields that are provided (not None)
-        if author_data.first_name is not None:
-            setattr(db_author, "first_name", author_data.first_name)
-        if author_data.last_name is not None:
-            setattr(db_author, "last_name", author_data.last_name)
-        if author_data.birth_date is not None:
-            setattr(db_author, "birth_date", parse_date(author_data.birth_date))
-        if author_data.death_date is not None:
-            setattr(db_author, "death_date", parse_date(author_data.death_date))
-        if author_data.nationality is not None:
-            setattr(db_author, "nationality", author_data.nationality)
-        if author_data.bio is not None:
-            setattr(db_author, "bio", author_data.bio)
-        if author_data.photo_url is not None:
-            setattr(db_author, "photo_url", author_data.photo_url)
-
-        self.session.add(db_author)
-        # Flush changes so generated columns (if any) are available.
-        await self.session.flush()
-        await self.session.refresh(db_author)
-
-        return self._model_to_entity(db_author)
-
     async def partial_update(
         self, author_id: int, author_data: AuthorUpdateData
     ) -> AuthorEntity | None:
@@ -178,8 +144,6 @@ class AuthorRepository(IAuthorRepository):
         # Update only the provided fields, converting date strings to date objects
         update_data = {k: v for k, v in author_data.__dict__.items() if v is not None}
         for field, value in update_data.items():
-            if not hasattr(db_author, field):
-                continue
             if field in {"birth_date", "death_date"}:
                 setattr(db_author, field, parse_date(value))
             else:

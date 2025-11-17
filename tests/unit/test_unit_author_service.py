@@ -14,8 +14,6 @@ from app.domain.value_objects import AuthorUpdateData, PaginatedResult, Paginati
 from app.schemas.author_schema import AuthorCreate
 from app.services.author_service import AuthorService
 
-# `mock_uow` fixture moved to tests/conftest.py to avoid duplication across unit tests
-
 
 @pytest.fixture
 def author_service(mock_repo, mock_uow, monkeypatch):
@@ -234,17 +232,20 @@ async def test_partial_update_author_success(author_service, mock_repo):
         last_name="Author",
         nationality="British",  # Updated
         birth_date=None,
-        death_date=None,
+        death_date=parse_date("1900-01-01"),  # Updated
         bio="Old bio",
         photo_url=None,
     )
 
-    update_data = AuthorUpdateData(nationality="British")
+    update_data = AuthorUpdateData(
+        nationality="British", death_date=parse_date("1900-01-01")
+    )
     result = await author_service.partial_update_author(1, update_data)
 
     assert result.nationality == "British"
+    assert result.death_date == parse_date("1900-01-01")
     mock_repo.partial_update.assert_called_once()
-    # Verify only nationality was in update_data
+    # Verify only nationality and death_date were in update_data
     call_args = mock_repo.partial_update.call_args
     assert call_args[0][0] == 1  # author_id
     normalized_data = call_args[0][1]  # AuthorUpdateData

@@ -1,9 +1,11 @@
-from types import SimpleNamespace
+from typing import cast
 
 import pytest
 
 from app.domain.entities import AuthorEntity
 from app.domain.exceptions import ConflictException, NotFoundException
+from app.domain.unit_of_work import IUnitOfWork
+from app.domain.value_objects import AuthorCreateData, AuthorUpdateData
 from app.services.author_service import AuthorService
 
 
@@ -47,10 +49,8 @@ class FakeRepo:
 
 def make_service(repo, uow=None):
     if uow is None:
-        uow = FakeUoW()
-    from app.core.noop_cache import NoopCache
-
-    return AuthorService(repo=repo, uow=uow, cache=NoopCache())
+        uow = cast(IUnitOfWork, FakeUoW())
+    return AuthorService(repo=repo, uow=uow)
 
 
 @pytest.mark.asyncio
@@ -77,7 +77,7 @@ async def test_create_author_conflict():
     svc = make_service(repo=FakeRepo(by_full_name=existing))
     with pytest.raises(ConflictException):
         await svc.create_author(
-            SimpleNamespace(
+            AuthorCreateData(
                 first_name="A",
                 last_name="B",
                 nationality=None,
@@ -95,7 +95,7 @@ async def test_partial_update_returns_existing_if_no_fields():
     svc = make_service(repo=FakeRepo(by_id=existing))
     res = await svc.partial_update_author(
         3,
-        SimpleNamespace(
+        AuthorUpdateData(
             first_name=None,
             last_name=None,
             nationality=None,

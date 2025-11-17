@@ -43,8 +43,6 @@ class AuthorBase(BaseModel):
                 f"Formats valides: YYYY-MM-DD (ex: 1826-04-12), DD/MM/YYYY (ex: 12/04/1826), MM/DD/YYYY (ex: 04/12/1826)"
             )
 
-        return value
-
 
 # --- For creation ---
 class AuthorCreate(AuthorBase):
@@ -88,8 +86,6 @@ class AuthorUpdate(BaseModel):
                 f"Date '{value}' ne correspond à aucun format accepté. "
                 f"Formats valides: YYYY-MM-DD (ex: 1826-04-12), DD/MM/YYYY (ex: 12/04/1826), MM/DD/YYYY (ex: 04/12/1826)"
             )
-
-        return value
 
 
 # --- For reading / response ---

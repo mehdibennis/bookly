@@ -118,6 +118,9 @@ async def test_model_to_entity_and_get_by_id_and_full_name():
     repo = AuthorRepository(session=session)
     res_none = await repo.get_by_full_name("No", "One")
     assert res_none is None
+    res = await repo.get_by_full_name("John", "Doe")
+    assert res is not None
+    assert res.last_name == "Doe"
 
 
 @pytest.mark.asyncio
@@ -158,7 +161,7 @@ async def test_create_update_partial_delete_flow(monkeypatch):
     # Update when not found
     session = FakeSession(results=[FakeResult(scalar_one_or_none_result=None)])
     repo = AuthorRepository(session=session)
-    updated = await repo.update(
+    updated = await repo.partial_update(
         123,
         AuthorUpdateData(
             first_name=None,
@@ -185,7 +188,7 @@ async def test_create_update_partial_delete_flow(monkeypatch):
         bio=None,
         photo_url=None,
     )
-    updated = await repo.update(5, data)
+    updated = await repo.partial_update(5, data)
     assert updated is not None
     assert updated.first_name == "New"
 
