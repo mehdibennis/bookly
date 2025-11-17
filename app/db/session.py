@@ -1,0 +1,49 @@
+"""Async SQLAlchemy session and engine setup for the application."""
+
+import logging
+import os
+
+import sqlalchemy
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlalchemy.orm import declarative_base
+
+from app.core.config import settings
+
+# Base for ORM models (declare early to avoid circular imports)
+Base = declarative_base()
+
+# Asynchronous Engine
+engine = create_async_engine(settings.DATABASE_URL, echo=settings.DEBUG, future=True)
+
+# If running under pytest-xdist, create a per-worker test schema and
+# instruct each new connection to use that schema via search_path.
+_worker_schema = None
+_worker = os.getenv("PYTEST_XDIST_WORKER")
+if _worker:  # pragma: no cover - xdist worker initialization
+    _worker_schema = settings.TEST_SCHEMA
+    # Use a synchronous engine for DDL to ensure CREATE SCHEMA executes cleanly
+    try:
+        sync_engine = sqlalchemy.create_engine(settings.SYNC_DATABASE_URL)
+        with sync_engine.connect() as conn:
+            conn.execute(
+                sqlalchemy.text(f"CREATE SCHEMA IF NOT EXISTS {_worker_schema}")
+            )
+            conn.commit()
+    except Exception as exc:  # pragma: no cover - defensive import-time guard
+        logger = logging.getLogger(__name__)
+        logger.warning("could not initialize per-worker schema (%s): %s", _worker, exc)
+
+
+# Asynchronous Session (type-safe factory)
+async_session = async_sessionmaker(engine, expire_on_commit=False)
+
+
+# Dependency FastAPI
+async def get_session():
+    """FastAPI dependency that yields an AsyncSession bound to the app engine."""
+    async with async_session() as session:
+        # If a per-worker test schema is configured, ensure the session uses it
+        if _worker_schema:  # pragma: no cover - xdist worker context
+            await session.execute(text(f"SET search_path TO {_worker_schema}"))
+        yield session

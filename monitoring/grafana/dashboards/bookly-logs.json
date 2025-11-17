@@ -1,0 +1,153 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "grafana" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": { "type": "loki", "uid": "Loki" },
+      "gridPos": { "h": 11, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": true,
+        "showCommonLabels": false,
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "Loki" },
+          "expr": "{compose_service=~\"$service\"} | json | name=\"access\" | json message | path != \"/metrics\" | line_format \"{{.method}} {{.path}} -> {{.status}} ({{.duration_ms}}ms) id={{.request_id}}\"",
+          "queryType": "range",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "Loki" },
+          "expr": "{compose_service=~\"$service\"} |= \"{\" | json | name!=\"access\" | message !~ \"/metrics\" | drop __error__",
+          "queryType": "range",
+          "refId": "B"
+        }
+      ],
+      "title": "Logs (web)",
+      "type": "logs"
+    },
+    {
+      "type": "stat",
+      "title": "5xx (5m)",
+      "id": 2,
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 11 },
+      "datasource": { "type": "loki", "uid": "Loki" },
+      "targets": [
+        {
+          "expr": "sum(count_over_time({compose_service=~\"$service\"} | json | name=\"access\" | json message | path != \"/metrics\" | status =~ \"5[0-9][0-9]\" | drop __error__ [5m]))",
+          "refId": "A"
+        }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "orientation": "horizontal", "textMode": "auto" }
+    },
+    {
+      "type": "stat",
+      "title": "4xx (5m)",
+      "id": 3,
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 11 },
+      "datasource": { "type": "loki", "uid": "Loki" },
+      "targets": [
+        {
+          "expr": "sum(count_over_time({compose_service=~\"$service\"} | json | name=\"access\" | json message | path != \"/metrics\" | status =~ \"4[0-9][0-9]\" | drop __error__ [5m]))",
+          "refId": "A"
+        }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "orientation": "horizontal", "textMode": "auto" }
+    },
+    {
+      "type": "stat",
+      "title": "RPS (approx, 5m)",
+      "id": 4,
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 11 },
+      "datasource": { "type": "loki", "uid": "Loki" },
+      "targets": [
+        {
+          "expr": "sum(count_over_time({compose_service=~\"$service\"} | json | name=\"access\" | json message | path != \"/metrics\" | drop __error__ [5m])) / 300",
+          "refId": "A"
+        }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "orientation": "horizontal", "textMode": "auto" }
+    },
+    {
+      "type": "bargauge",
+      "title": "Top paths (5m)",
+      "id": 5,
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 15 },
+      "datasource": { "type": "loki", "uid": "Loki" },
+      "targets": [
+        {
+          "expr": "sum by (path) (count_over_time({compose_service=~\"$service\"} | json | name=\"access\" | json message | path != \"/metrics\" | label_format path=path | drop __error__ [5m]))",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "bargauge",
+      "title": "Top status (5m)",
+      "id": 6,
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 15 },
+      "datasource": { "type": "loki", "uid": "Loki" },
+      "targets": [
+        {
+          "expr": "sum by (status) (count_over_time({compose_service=~\"$service\"} | json | name=\"access\" | json message | path != \"/metrics\" | label_format status=status | drop __error__ [5m]))",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": ["bookly", "logs"],
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "type": "query",
+        "query": {
+          "query": "label_values({compose_project=\"bookly\"}, compose_service)",
+          "refId": "A"
+        },
+        "datasource": { "type": "loki", "uid": "Loki" },
+        "refresh": 2,
+        "current": { "text": "web", "value": "web", "selected": true },
+        "hide": 0,
+        "label": "Service",
+        "includeAll": true,
+        "allValue": ".+",
+        "multi": false
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Bookly Logs",
+  "uid": "bookly-logs",
+  "version": 1,
+  "weekStart": ""
+}

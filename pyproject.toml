@@ -1,0 +1,40 @@
+[tool.ruff]
+# Largeur maximale des lignes pour le formateur et le linter Ruff
+line-length = 150
+lint.select = [
+  "E",  # pycodestyle errors
+  "F",  # pyflakes
+  "I",  # isort
+  "UP", # pyupgrade
+]
+lint.ignore = [
+  "E203",  # whitespace before ':' (conflicts with black)
+]
+
+[tool.mypy]
+python_version = "3.11"
+warn_unused_ignores = true
+warn_redundant_casts = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+no_implicit_optional = true
+check_untyped_defs = true
+show_error_codes = true
+pretty = true
+plugins = []
+
+# isort est exécuté par `make format` avant Ruff; on aligne sa longueur de ligne
+[tool.isort]
+profile = "black"
+line_length = 120
+
+[tool.pytest.ini_options]
+addopts = "--cov=app --cov-report=term-missing:skip-covered --cov-report=html -n auto"
+asyncio_mode = "strict"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::UserWarning",
+]
+markers = [
+    "perf: performance tests (deselected by default)",
+]

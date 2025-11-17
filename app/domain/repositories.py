@@ -1,0 +1,74 @@
+from typing import Protocol
+
+from app.domain.entities import AuthorEntity, BookEntity
+from app.domain.value_objects import (
+    AuthorCreateData,
+    AuthorUpdateData,
+    BookCreateData,
+    BookUpdateData,
+    PaginatedResult,
+    PaginationParams,
+)
+
+
+class ICacheService(Protocol):
+    """Interface for caching service."""
+
+    async def connect(self) -> None: ...
+    async def get_books_page(
+        self, page: int, size: int
+    ) -> PaginatedResult[BookEntity] | None: ...
+    async def set_books_page(
+        self, page: int, size: int, result: PaginatedResult[BookEntity]
+    ) -> None: ...
+    async def invalidate_books_cache(self) -> None: ...
+    async def get_authors_page(
+        self, page: int, size: int
+    ) -> PaginatedResult[AuthorEntity] | None: ...
+    async def set_authors_page(
+        self, page: int, size: int, result: PaginatedResult[AuthorEntity] | dict
+    ) -> None: ...
+    async def invalidate_authors_cache(self) -> None: ...
+
+    # Optional search-aware helpers
+    async def get_authors_page_search(
+        self, page: int, size: int, search: str
+    ) -> PaginatedResult[AuthorEntity] | None: ...
+    async def set_authors_page_search(
+        self,
+        page: int,
+        size: int,
+        search: str,
+        result: PaginatedResult[AuthorEntity] | dict,
+    ) -> None: ...
+
+    # Lifecycle
+    async def close(self) -> None: ...
+
+
+class IBookRepository(Protocol):
+    async def get_by_id(self, book_id: int) -> BookEntity | None: ...
+    async def get_by_title(self, title: str) -> BookEntity | None: ...
+    async def get_paginated(
+        self, pagination: PaginationParams
+    ) -> PaginatedResult[BookEntity]: ...
+    async def create(self, book_data: BookCreateData) -> BookEntity: ...
+    async def update(
+        self, book_id: int, book_data: BookUpdateData
+    ) -> BookEntity | None: ...
+    async def delete(self, book_id: int) -> bool: ...
+
+
+class IAuthorRepository(Protocol):
+    async def get_by_id(self, author_id: int) -> AuthorEntity | None: ...
+    async def get_by_full_name(
+        self, first_name: str, last_name: str
+    ) -> AuthorEntity | None: ...
+    async def get_paginated(
+        self, pagination: PaginationParams, search: str | None = None
+    ) -> PaginatedResult[AuthorEntity]: ...
+    async def create(self, author_data: AuthorCreateData) -> AuthorEntity: ...
+    async def delete(self, author_id: int) -> bool: ...
+    async def partial_update(
+        self, author_id: int, author_data: AuthorUpdateData
+    ) -> AuthorEntity | None: ...
