@@ -248,6 +248,6 @@ async def list_users(
 ):
     try:
         users = await kc.list_users()
-        return users
     except KeycloakAdminError as e:
         raise HTTPException(status_code=502, detail=str(e))
+    return users

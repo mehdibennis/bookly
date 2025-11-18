@@ -1,6 +1,9 @@
+from typing import cast
+
 from app.api.mappers import AuthorMapper, BookMapper, PaginationMapper
 from app.domain.entities import AuthorEntity, BookEntity
 from app.domain.value_objects import PaginatedResult, PaginationMeta
+from app.schemas.book_schema import BookCreate
 from app.schemas.pagination import PaginatedResponse
 
 
@@ -10,7 +13,7 @@ def test_book_mapper_create_update_and_entity_to_dto():
         title = "the hobbit"
         authors = [1]
 
-    bc = DummyCreate()
+    bc = cast(BookCreate, DummyCreate())
     bd = BookMapper.create_dto_to_domain(bc)
     assert bd.title == "the hobbit"
 
