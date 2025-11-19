@@ -202,29 +202,6 @@ def override_keycloak(mock_user):
     app.dependency_overrides.pop(get_current_user, None)
 
 
-# ========== Redis Mock & DB Cleanup ==========
-
-
-class MockRedisCache:
-    """Lightweight in-memory async RedisCache replacement used by tests.
-
-    This mirrors the public async methods used by application code and tests.
-    Keeping it at module level lets multiple fixtures reuse the same mock
-    without duplication.
-    """
-
-    def __init__(self):
-        # Expose AsyncMock attributes so tests can assert calls when needed
-        self.connect = AsyncMock()
-        self.close = AsyncMock()
-        self.get_books_page = AsyncMock(return_value=None)
-        self.set_books_page = AsyncMock()
-        self.get_authors_page = AsyncMock(return_value=None)
-        self.set_authors_page = AsyncMock()
-        self.get_authors_page_search = AsyncMock(return_value=None)
-        self.set_authors_page_search = AsyncMock()
-
-
 @pytest.fixture
 def mock_redis_client():
     """Reusable mock for the low-level redis client (AsyncIO client).
@@ -240,19 +217,6 @@ def mock_redis_client():
     mock.delete = AsyncMock()
     mock.keys = AsyncMock(return_value=[])
     return mock
-
-
-@pytest.fixture(autouse=True)
-def mock_redis_cache(monkeypatch):
-    """Autouse fixture that patches the application `RedisCache` factory to
-    return the module-level `MockRedisCache` instance for tests.
-    """
-    from app.core import redis_cache
-
-    instance = MockRedisCache()
-    monkeypatch.setattr(redis_cache, "RedisCache", lambda url=None: instance)
-    # Yield the instance so tests can request `mock_redis_cache` to inspect calls
-    yield instance
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -345,8 +309,6 @@ async def override_db_session_for_all_tests():
 
 @pytest.fixture
 def mock_keycloak_auth(monkeypatch):
-    # The autouse `mock_redis_cache` fixture already patches `RedisCache` to
-    # use the shared `MockRedisCache`, so we don't need to duplicate it here.
     from app.core.keycloak_auth import keycloak_auth
 
     class MockKeycloakOpenID:

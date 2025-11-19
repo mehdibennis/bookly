@@ -13,10 +13,7 @@ omit =
     app/core/middleware.py
     app/core/observability.py
     app/core/sentry_integration.py
-    app/core/redis_cache.py
-    app/db/models/user_model.py
     app/core/config.py
-    app/core/error_handlers.py
 parallel = true
 concurrency = multiprocessing
 
