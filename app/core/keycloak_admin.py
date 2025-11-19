@@ -10,16 +10,16 @@ from app.core.config import settings
 
 
 class KeycloakAdminError(Exception):
-    """Erreur levée quand une opération Keycloak Admin échoue."""
+    """Error raised when a Keycloak Admin operation fails."""
 
 
 class KeycloakAdmin:
     """
-    Client Keycloak Admin asynchrone minimal pour la gestion des utilisateurs.
+    Minimal asynchronous Keycloak Admin client for user management.
 
-    - Utilise le flux client_credentials pour appeler l'API Admin
-      (nécessite un client confidentiel avec service account + rôles realm-management).
-    - N'utilise jamais le token admin pour /userinfo (il faut un access token d'utilisateur).
+    - Uses the client_credentials flow to call the Admin API
+      (requires a confidential client with service account + realm-management roles).
+    - Never uses the admin token for /userinfo (requires a user access token).
     """
 
     def __init__(self, *, timeout: float = 10.0, admin_access_token: str | None = None):
@@ -33,11 +33,11 @@ class KeycloakAdmin:
         self._token: str = ""
         self._token_expires_at: float = 0.0
 
-        # Optionnel: autoriser l'injection d'un access token (ex: token d'un utilisateur admin)
-        # Utile pour les tests quand on ne peut pas utiliser client_credentials
+        # Optional: allow injection of an access token (e.g., an admin user's token)
+        # Useful for tests when client_credentials cannot be used
         if admin_access_token:
             self._token = admin_access_token
-            # définir une expiration raisonnable (1h) pour éviter un refresh immédiat
+            # set a reasonable expiration (1h) to avoid immediate refresh
             self._token_expires_at = time.time() + 3600
 
     # URLs
@@ -59,7 +59,7 @@ class KeycloakAdmin:
 
     # Auth admin (client_credentials)
     async def _ensure_token(self) -> str:
-        """Retourne un token admin valide (avec cache et marge d'expiration)."""
+        """Return a valid admin token (with cache and expiration margin)."""
         now = time.time()
         if self._token and now < (self._token_expires_at - 10):
             return self._token
@@ -73,15 +73,13 @@ class KeycloakAdmin:
             resp = await client.post(self.token_url, data=data)
             if resp.status_code != 200:
                 raise KeycloakAdminError(
-                    f"Echec de récupération du token admin: {resp.status_code} {resp.text}"
+                    f"Failed to fetch admin token: {resp.status_code} {resp.text}"
                 )
             body = resp.json()
             access_token = body.get("access_token")
             expires_in = int(body.get("expires_in", 0))
             if not access_token:
-                raise KeycloakAdminError(
-                    "Réponse token invalide: access_token manquant"
-                )
+                raise KeycloakAdminError("Invalid token response: missing access_token")
             self._token = access_token
             self._token_expires_at = now + max(expires_in, 60)
             return access_token
@@ -96,7 +94,7 @@ class KeycloakAdmin:
         m = re.search(r"/users/([^/]+)$", location)
         return m.group(1) if m else None
 
-    # Opérations utilisateurs (API Admin)
+    # User operations (Admin API)
     async def create_user(
         self,
         *,
@@ -125,13 +123,13 @@ class KeycloakAdmin:
             )
             if resp.status_code not in (201, 409):
                 raise KeycloakAdminError(
-                    f"Echec création utilisateur: {resp.status_code} {resp.text}"
+                    f"Failed to create user: {resp.status_code} {resp.text}"
                 )
             if resp.status_code == 409:
                 user = await self.get_user_by_username(username)
                 if not user:
                     raise KeycloakAdminError(
-                        "Conflit: utilisateur existe mais introuvable"
+                        "Conflict: user exists but not found by username"
                     )
                 user_id = user["id"]
             else:
@@ -141,7 +139,7 @@ class KeycloakAdmin:
                     user = await self.get_user_by_username(username)
                     if not user:
                         raise KeycloakAdminError(
-                            "Utilisateur créé mais id non déterminable"
+                            "User created but ID could not be determined"
                         )
                     user_id = user["id"]
 
@@ -161,7 +159,7 @@ class KeycloakAdmin:
             )
             if resp.status_code != 200:
                 raise KeycloakAdminError(
-                    f"Echec recherche utilisateur: {resp.status_code} {resp.text}"
+                    f"Failed to search user: {resp.status_code} {resp.text}"
                 )
             items = resp.json()
             if not items:
@@ -177,7 +175,7 @@ class KeycloakAdmin:
                 return None
             if resp.status_code != 200:
                 raise KeycloakAdminError(
-                    f"Echec récupération utilisateur par id: {resp.status_code} {resp.text}"
+                    f"Failed to get user by id: {resp.status_code} {resp.text}"
                 )
             return resp.json()
 
@@ -188,7 +186,7 @@ class KeycloakAdmin:
             )
             if resp.status_code != 200:
                 raise KeycloakAdminError(
-                    f"Echec liste utilisateurs: {resp.status_code} {resp.text}"
+                    f"Failed to list users: {resp.status_code} {resp.text}"
                 )
             return resp.json()
 
@@ -222,7 +220,7 @@ class KeycloakAdmin:
             )
             if resp.status_code not in (204, 200):
                 raise KeycloakAdminError(
-                    f"Echec mise à jour utilisateur: {resp.status_code} {resp.text}"
+                    f"Failed to update user: {resp.status_code} {resp.text}"
                 )
 
     async def delete_user(self, user_id: str) -> None:
@@ -232,7 +230,7 @@ class KeycloakAdmin:
             )
             if resp.status_code not in (204, 200):
                 raise KeycloakAdminError(
-                    f"Echec suppression utilisateur: {resp.status_code} {resp.text}"
+                    f"Failed to delete user: {resp.status_code} {resp.text}"
                 )
 
     async def set_user_password(
@@ -247,10 +245,10 @@ class KeycloakAdmin:
             )
             if resp.status_code not in (204, 200):
                 raise KeycloakAdminError(
-                    f"Echec réinitialisation mot de passe: {resp.status_code} {resp.text}"
+                    f"Failed to reset password: {resp.status_code} {resp.text}"
                 )
 
-    # Token introspection (avec credentials admin)
+    # Introspection Token (with admin credentials)
     async def introspect_token(self, token: str) -> dict[str, Any]:
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             data = {
@@ -261,20 +259,20 @@ class KeycloakAdmin:
             resp = await client.post(self.introspect_url, data=data)
             if resp.status_code != 200:
                 raise KeycloakAdminError(
-                    f"Echec introspection token: {resp.status_code} {resp.text}"
+                    f"Failed to introspect token: {resp.status_code} {resp.text}"
                 )
             return resp.json()
 
-    # /userinfo (avec access token d'un utilisateur)
+    # /userinfo (with access token of a user)
     async def get_userinfo(self, access_token: str) -> dict[str, Any]:
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             resp = await client.get(
                 self.userinfo_url, headers={"Authorization": f"Bearer {access_token}"}
             )
             if resp.status_code == 401:
-                raise KeycloakAdminError("Access token utilisateur invalide ou expiré")
+                raise KeycloakAdminError("User access token invalid or expired")
             if resp.status_code != 200:
                 raise KeycloakAdminError(
-                    f"Echec appel userinfo: {resp.status_code} {resp.text}"
+                    f"Failed to call userinfo: {resp.status_code} {resp.text}"
                 )
             return resp.json()

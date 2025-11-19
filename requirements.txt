@@ -37,3 +37,4 @@ opentelemetry-exporter-otlp
 opentelemetry-instrumentation-fastapi
 sentry-sdk[fastapi]
 pre-commit
+respx
