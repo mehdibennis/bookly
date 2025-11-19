@@ -1,9 +1,12 @@
+from typing import cast
+
 import pytest
 from fastapi import HTTPException
 
 from app.api.v1.routes import admin_users
 from app.core.cache_service import RedisCacheService
 from app.core.config import settings
+from app.core.keycloak_auth import KeycloakUser
 from tests.helpers import DummyUser
 
 
@@ -11,7 +14,7 @@ def test_require_realm_mgmt_without_roles_raises(monkeypatch):
     # Ensure no service account is configured
     monkeypatch.setattr(settings, "KEYCLOAK_CLIENT_SECRET", "")
 
-    user = DummyUser()
+    user = cast(KeycloakUser, DummyUser())
 
     with pytest.raises(HTTPException):
         # function is synchronous

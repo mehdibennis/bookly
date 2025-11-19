@@ -202,29 +202,6 @@ def override_keycloak(mock_user):
     app.dependency_overrides.pop(get_current_user, None)
 
 
-# ========== Redis Mock & DB Cleanup ==========
-
-
-class MockRedisCache:
-    """Lightweight in-memory async RedisCache replacement used by tests.
-
-    This mirrors the public async methods used by application code and tests.
-    Keeping it at module level lets multiple fixtures reuse the same mock
-    without duplication.
-    """
-
-    def __init__(self):
-        # Expose AsyncMock attributes so tests can assert calls when needed
-        self.connect = AsyncMock()
-        self.close = AsyncMock()
-        self.get_books_page = AsyncMock(return_value=None)
-        self.set_books_page = AsyncMock()
-        self.get_authors_page = AsyncMock(return_value=None)
-        self.set_authors_page = AsyncMock()
-        self.get_authors_page_search = AsyncMock(return_value=None)
-        self.set_authors_page_search = AsyncMock()
-
-
 @pytest.fixture
 def mock_redis_client():
     """Reusable mock for the low-level redis client (AsyncIO client).
@@ -240,19 +217,6 @@ def mock_redis_client():
     mock.delete = AsyncMock()
     mock.keys = AsyncMock(return_value=[])
     return mock
-
-
-@pytest.fixture(autouse=True)
-def mock_redis_cache(monkeypatch):
-    """Autouse fixture that patches the application `RedisCache` factory to
-    return the module-level `MockRedisCache` instance for tests.
-    """
-    from app.core import redis_cache
-
-    instance = MockRedisCache()
-    monkeypatch.setattr(redis_cache, "RedisCache", lambda url=None: instance)
-    # Yield the instance so tests can request `mock_redis_cache` to inspect calls
-    yield instance
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -345,8 +309,6 @@ async def override_db_session_for_all_tests():
 
 @pytest.fixture
 def mock_keycloak_auth(monkeypatch):
-    # The autouse `mock_redis_cache` fixture already patches `RedisCache` to
-    # use the shared `MockRedisCache`, so we don't need to duplicate it here.
     from app.core.keycloak_auth import keycloak_auth
 
     class MockKeycloakOpenID:
@@ -421,3 +383,59 @@ def mock_uow():
     uow.__aenter__ = AsyncMock(return_value=None)
     uow.__aexit__ = AsyncMock(return_value=None)
     return uow
+
+
+# ========== Keycloak test helpers ==========
+
+
+@pytest.fixture
+def settings_stub(monkeypatch):
+    from app.core import config
+
+    monkeypatch.setattr(
+        config.settings, "KEYCLOAK_SERVER_URL", "https://kc-test.example.com/"
+    )
+    monkeypatch.setattr(config.settings, "KEYCLOAK_REALM", "test-realm")
+    monkeypatch.setattr(config.settings, "KEYCLOAK_CLIENT_ID", "test-client")
+    monkeypatch.setattr(config.settings, "KEYCLOAK_CLIENT_SECRET", "secret")
+
+
+@pytest.fixture
+def keycloak_urls(settings_stub):
+    """Return common Keycloak URLs built from current settings.
+
+    Tests that need to mock multiple Keycloak endpoints can depend on this
+    fixture. Note: if a test needs to override settings, include the
+    `settings_stub` fixture (defined in the relevant test modules) so the
+    URLs are constructed from the patched values.
+    """
+    from app.core import config
+
+    base = config.settings.KEYCLOAK_SERVER_URL.rstrip("/")
+    realm = config.settings.KEYCLOAK_REALM
+    return {
+        "token_url": f"{base}/realms/{realm}/protocol/openid-connect/token",
+        "introspect_url": f"{base}/realms/{realm}/protocol/openid-connect/token/introspect",
+        "userinfo_url": f"{base}/realms/{realm}/protocol/openid-connect/userinfo",
+        "base_admin": f"{base}/admin/realms/{realm}/",
+        "reset_password_url": f"{base}/admin/realms/{realm}/users/{{user_id}}/reset-password",
+    }
+
+
+@pytest.fixture
+def mock_keycloak_token(respx_mock, keycloak_urls):
+    """Register a default successful token endpoint using `respx_mock`.
+
+    Depends on `settings_stub` to ensure test-specific settings are applied
+    before the URL is computed. Returns a small dict with helpful values so
+    tests can access `base_admin` or the payload if needed.
+    """
+    token_payload = {"access_token": "fake-token", "expires_in": 3600}
+    respx_mock.post(keycloak_urls["token_url"]).respond(
+        status_code=200, json=token_payload
+    )
+    return {
+        "token_url": keycloak_urls["token_url"],
+        "base_admin": keycloak_urls["base_admin"],
+        "token_payload": token_payload,
+    }

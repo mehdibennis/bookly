@@ -1,11 +1,13 @@
 import types
+from typing import cast
 
 import pytest
 from fastapi import HTTPException
 
 from app.api.v1.routes import admin_users
 from app.core.config import settings
-from app.core.keycloak_admin import KeycloakAdminError
+from app.core.keycloak_admin import KeycloakAdmin, KeycloakAdminError
+from app.core.keycloak_auth import KeycloakUser
 from app.schemas.user_admin_schema import (
     UserAdminCreate,
     UserAdminUpdate,
@@ -37,8 +39,9 @@ def test_get_admin_client_uses_service_account_when_secret(monkeypatch):
         return DummyKC(admin_access_token)
 
     monkeypatch.setattr(admin_users, "KeycloakAdmin", ctor)
-    user = DummyUser(
-        raw_token="user-token", roles={("realm-management", "manage-users")}
+    user = cast(
+        KeycloakUser,
+        DummyUser(raw_token="user-token", roles={("realm-management", "manage-users")}),
     )
 
     # Act
@@ -58,7 +61,10 @@ def test_get_admin_client_uses_user_token_when_has_realm_mgmt(monkeypatch):
         return DummyKC(admin_access_token)
 
     monkeypatch.setattr(admin_users, "KeycloakAdmin", ctor)
-    user = DummyUser(raw_token="user-token", roles={("realm-management", "view-users")})
+    user = cast(
+        KeycloakUser,
+        DummyUser(raw_token="user-token", roles={("realm-management", "view-users")}),
+    )
 
     # Act
     kc = admin_users.get_admin_client(user)
@@ -80,7 +86,7 @@ def test_get_admin_client_fallback_without_roles(monkeypatch):
         return DummyKC(admin_access_token)
 
     monkeypatch.setattr(admin_users, "KeycloakAdmin", ctor)
-    user = DummyUser(raw_token=None, roles=set())
+    user = cast(KeycloakUser, DummyUser(raw_token=None, roles=set()))
 
     # Act
     kc = admin_users.get_admin_client(user)
@@ -94,7 +100,7 @@ def test_get_admin_client_fallback_without_roles(monkeypatch):
 def test_require_realm_mgmt_bypasses_when_sa_secret(monkeypatch):
     # Arrange: SA secret configured and a dummy user without the role method
     monkeypatch.setattr(settings, "KEYCLOAK_CLIENT_SECRET", "secret")
-    dummy = types.SimpleNamespace(username="x")
+    dummy = cast(KeycloakUser, types.SimpleNamespace(username="x"))
 
     # Act
     out = admin_users.require_realm_mgmt(dummy)
@@ -105,7 +111,7 @@ def test_require_realm_mgmt_bypasses_when_sa_secret(monkeypatch):
 
 def test_require_realm_mgmt_passes_with_roles(monkeypatch):
     # Arrange: no SA secret, but user has a realm-management role
-    user = DummyUser(roles={("realm-management", "manage-users")})
+    user = cast(KeycloakUser, DummyUser(roles={("realm-management", "manage-users")}))
 
     # Act / Assert
     assert admin_users.require_realm_mgmt(user) is user
@@ -113,7 +119,7 @@ def test_require_realm_mgmt_passes_with_roles(monkeypatch):
 
 def test_require_realm_mgmt_forbidden_without_roles(monkeypatch):
     # Arrange: no SA secret, user lacks roles
-    user = DummyUser(roles=set())
+    user = cast(KeycloakUser, DummyUser(roles=set()))
 
     # Act / Assert
     with pytest.raises(HTTPException) as ei:
@@ -156,23 +162,25 @@ async def test_create_user_raises_502_on_client_error():
     payload = UserAdminCreate(
         username="u",
         email="u@example.com",
-        first_name="U",
-        last_name="Ser",
+        firstName="U",
+        lastName="Ser",
         enabled=True,
         password="x",
     )
     with pytest.raises(HTTPException) as ei:
-        await admin_users.create_user(payload, None, KcErroring())
+        await admin_users.create_user(payload, None, cast(KeycloakAdmin, KcErroring()))
     assert ei.value.status_code == 502
 
 
 @pytest.mark.asyncio
 async def test_update_user_raises_502_on_client_error():
     payload = UserAdminUpdate(
-        email=None, first_name=None, last_name=None, enabled=None, attributes=None
+        email=None, firstName=None, lastName=None, enabled=None, attributes=None
     )
     with pytest.raises(HTTPException) as ei:
-        await admin_users.update_user("id", payload, None, KcErroring())
+        await admin_users.update_user(
+            "id", payload, None, cast(KeycloakAdmin, KcErroring())
+        )
     assert ei.value.status_code == 502
 
 
@@ -180,14 +188,16 @@ async def test_update_user_raises_502_on_client_error():
 async def test_set_password_raises_502_on_client_error():
     payload = UserPasswordUpdate(password="p", temporary=False)
     with pytest.raises(HTTPException) as ei:
-        await admin_users.set_password("id", payload, None, KcErroring())
+        await admin_users.set_password(
+            "id", payload, None, cast(KeycloakAdmin, KcErroring())
+        )
     assert ei.value.status_code == 502
 
 
 @pytest.mark.asyncio
 async def test_delete_user_raises_502_on_client_error():
     with pytest.raises(HTTPException) as ei:
-        await admin_users.delete_user("id", None, KcErroring())
+        await admin_users.delete_user("id", None, cast(KeycloakAdmin, KcErroring()))
     assert ei.value.status_code == 502
 
 
@@ -199,12 +209,12 @@ class KcGetUserNone:
 @pytest.mark.asyncio
 async def test_get_user_returns_404_when_missing():
     with pytest.raises(HTTPException) as ei:
-        await admin_users.get_user("id", None, KcGetUserNone())
+        await admin_users.get_user("id", None, cast(KeycloakAdmin, KcGetUserNone()))
     assert ei.value.status_code == 404
 
 
 @pytest.mark.asyncio
 async def test_get_user_raises_502_on_client_error():
     with pytest.raises(HTTPException) as ei:
-        await admin_users.get_user("id", None, KcErroring())
+        await admin_users.get_user("id", None, cast(KeycloakAdmin, KcErroring()))
     assert ei.value.status_code == 502

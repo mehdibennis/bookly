@@ -2,6 +2,7 @@ import pytest
 
 from app.api.v1.routes.admin_users import get_admin_client
 from app.core.config import settings
+from app.core.keycloak_admin import KeycloakAdminError
 from app.core.url_helpers import reverse
 from app.main import app as fastapi_app
 
@@ -42,6 +43,26 @@ class FakeKC:
 
     async def delete_user(self, user_id: str):
         self._users.pop(user_id, None)
+
+
+@pytest.mark.asyncio
+async def test_admin_users_list_raise_keycloakadminerror(client, monkeypatch):
+    # Ensure service-account gate passes
+    monkeypatch.setattr(settings, "KEYCLOAK_CLIENT_SECRET", "dummy")
+
+    class FailingFakeKC:
+        async def list_users(self):
+            raise KeycloakAdminError("Keycloak error")
+
+    # Override dependency to use failing fake client
+    from app.main import app
+
+    app.dependency_overrides[get_admin_client] = lambda: FailingFakeKC()
+    list_path = reverse(fastapi_app, "admin_users:list")
+    r = await client.get(list_path)
+    assert r.status_code == 502
+    # cleanup override
+    app.dependency_overrides.pop(get_admin_client, None)
 
 
 @pytest.mark.asyncio
