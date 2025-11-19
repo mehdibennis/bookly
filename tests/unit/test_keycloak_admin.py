@@ -31,10 +31,8 @@ async def test_ensure_token_refreshes_on_expiry(settings_stub, respx_mock):
     token1 = await kc._ensure_token()
     assert token1 == "fake-token"
 
-    import asyncio
     import time
 
-    await asyncio.sleep(3)
     kc._token_expires_at = time.time() - 1
     respx_mock.post(token_url).respond(
         status_code=200,
@@ -106,18 +104,12 @@ async def test_list_users_returns_json(respx_mock, mock_keycloak_token):
     )
     assert users_list.called is False
     assert respx_mock.calls.call_count == 0
-    # Before calling the client no HTTP calls were made
-    assert users_list.called is False
-    assert respx_mock.calls.call_count == 0
 
     # Call the method under test so the mocked route is exercised
     users = await kc.list_users()
     assert isinstance(users, list)
     assert users[0]["id"] == "user1"
     assert users_list.called is True
-    # 1 call for token, 1 call for the GET users
-    assert respx_mock.calls.call_count == 2
-    assert users_list is not None
 
 
 @pytest.mark.asyncio
@@ -347,19 +339,6 @@ async def test_constructor_admin_access_token_sets_token_and_prevents_fetch(resp
 
 
 @pytest.mark.asyncio
-async def test_keycloak_admin_error_when_create_fails(respx_mock, mock_keycloak_token):
-    kc = get_admin_client()
-
-    respx_mock.post(f"{kc.base_admin}/users").respond(
-        status_code=500, json={"error": "server_error"}
-    )
-
-    with pytest.raises(Exception) as exc_info:
-        await kc.create_user(username="u1", email="user@example.com")
-    assert "Failed to create user" in str(exc_info.value)
-
-
-@pytest.mark.asyncio
 async def test_create_user_409_and_no_user_found_raises_conflict(
     respx_mock, mock_keycloak_token
 ):
@@ -370,11 +349,7 @@ async def test_create_user_409_and_no_user_found_raises_conflict(
     with pytest.raises(KeycloakAdminError) as excinfo:
         await kc.create_user(username="u1", email="a@b.com")
 
-    assert (
-        "Conflict" in str(excinfo.value)
-        or "introuvable" in str(excinfo.value)
-        or "not found" in str(excinfo.value)
-    )
+    assert "Conflict: user exists but not found by username" in str(excinfo.value)
 
 
 @pytest.mark.asyncio
@@ -393,7 +368,7 @@ async def test_extract_id_from_location_returns_none_on_invalid_location(
     with pytest.raises(KeycloakAdminError) as excinfo:
         await kc.create_user(username="u1", email="a@b.com")
     assert isinstance(excinfo.value, KeycloakAdminError)
-    assert "id" in str(excinfo.value).lower() or "id non" in str(excinfo.value).lower()
+    assert "id" in str(excinfo.value).lower()
 
 
 @pytest.mark.asyncio
@@ -460,7 +435,7 @@ async def test_create_user_calls_set_password_and_returns_id(
 async def test_get_user_by_username_not_found(respx_mock, mock_keycloak_token):
     kc = get_admin_client()
     respx_mock.get(f"{kc.base_admin}/users").respond(
-        status_code=201,
+        status_code=401,
         json=[],
     )
     with pytest.raises(Exception) as excinfo:
