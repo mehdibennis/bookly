@@ -10,7 +10,7 @@ from starlette.responses import Response
 
 from app.api.system import system_router
 from app.api.v1.routes import admin_users as users
-from app.api.v1.routes import authors, books
+from app.api.v1.routes import authors, books, stores
 from app.core import config
 from app.core.error_handlers import (
     app_exception_handler,
@@ -104,6 +104,7 @@ if config.settings.LOG_ACCESS:
 
 app.include_router(books.router, prefix="/api/v1", tags=["books"])
 app.include_router(authors.router, prefix="/api/v1", tags=["authors"])
+app.include_router(stores.router, prefix="/api/v1", tags=["stores"])
 app.include_router(users.router, prefix="/api/v1", tags=["users"])
 app.include_router(system_router, prefix="", tags=["System"])
 

@@ -37,3 +37,24 @@ class BookEntity:
     def normalize(self):
         self.title = self.title.strip().title()
         return self
+
+
+@dataclass
+class StoreEntity:
+    id: int | None
+    name: str
+    location: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+    def normalize(self):
+        self.name = self.name.strip().title()
+        self.location = self.location.strip() if self.location else None
+        return self
+
+
+@dataclass
+class StoreInventoryEntity:
+    store_id: int
+    book_id: int
+    quantity: int

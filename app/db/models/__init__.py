@@ -2,5 +2,6 @@
 
 from app.db.models.author_model import Author
 from app.db.models.book_model import Book
+from app.db.models.store_model import Store, StoreInventory
 
-__all__ = ["Author", "Book"]
+__all__ = ["Author", "Book", "Store", "StoreInventory"]

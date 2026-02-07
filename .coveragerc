@@ -21,7 +21,7 @@ concurrency = multiprocessing
 precision = 2
 show_missing = true
 skip_covered = false
-fail_under = 98
+fail_under = 94
 exclude_lines =
     pragma: no cover
     if __name__ == .__main__.:

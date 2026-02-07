@@ -200,3 +200,23 @@ class PaginatedResult(Generic[T]):
         )
 
         return cls(data=items, meta=pagination_meta)
+
+
+@dataclass(frozen=True)
+class StoreCreateData:
+    """Value object for store creation data."""
+
+    name: str
+    location: str | None = None
+
+    def __post_init__(self):
+        if not self.name or not self.name.strip():
+            raise ValueError("Name cannot be empty")
+
+
+@dataclass(frozen=True)
+class StoreUpdateData:
+    """Value object for store update data."""
+
+    name: str | None = None
+    location: str | None = None

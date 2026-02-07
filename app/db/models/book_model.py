@@ -18,3 +18,11 @@ class Book(Base, TimestampMixin):
         back_populates="books",
         lazy="selectin",
     )
+
+    # Store inventories referencing this book (per-store stock tracking)
+    store_entries = relationship(
+        "StoreInventory",
+        back_populates="book",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
