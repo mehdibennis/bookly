@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from app.domain.entities import AuthorEntity, BookEntity
+from app.domain.entities import AuthorEntity, BookEntity, StoreEntity
 from app.domain.value_objects import (
     AuthorCreateData,
     AuthorUpdateData,
@@ -8,6 +8,8 @@ from app.domain.value_objects import (
     BookUpdateData,
     PaginatedResult,
     PaginationParams,
+    StoreCreateData,
+    StoreUpdateData,
 )
 
 
@@ -72,3 +74,23 @@ class IAuthorRepository(Protocol):
     async def partial_update(
         self, author_id: int, author_data: AuthorUpdateData
     ) -> AuthorEntity | None: ...
+
+
+class IStoreRepository(Protocol):
+    async def get_by_name(self, name: str) -> StoreEntity | None: ...
+    async def get_by_id(self, store_id: int) -> StoreEntity | None: ...
+    async def list(
+        self, pagination: PaginationParams
+    ) -> PaginatedResult[StoreEntity]: ...
+    async def create(self, store_data: StoreCreateData) -> StoreEntity: ...
+    async def update(
+        self, store_id: int, store_data: StoreUpdateData
+    ) -> StoreEntity | None: ...
+    async def delete(self, store_id: int) -> bool: ...
+    async def add_book_stock(
+        self, store_id: int, book_id: int, quantity: int
+    ) -> None: ...
+    async def remove_book_stock(
+        self, store_id: int, book_id: int, quantity: int
+    ) -> None: ...
+    async def get_stock(self, store_id: int, book_id: int) -> int: ...

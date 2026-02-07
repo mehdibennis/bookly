@@ -7,7 +7,7 @@ ensuring clean separation of concerns and preventing coupling between layers.
 from typing import Callable, TypeVar
 
 from app.core.date_utils import parse_date
-from app.domain.entities import AuthorEntity, BookEntity
+from app.domain.entities import AuthorEntity, BookEntity, StoreEntity
 from app.domain.value_objects import (
     AuthorCreateData,
     AuthorUpdateData,
@@ -15,10 +15,13 @@ from app.domain.value_objects import (
     BookUpdateData,
     PaginatedResult,
     PaginationParams,
+    StoreCreateData,
+    StoreUpdateData,
 )
 from app.schemas.author_schema import Author, AuthorCreate, AuthorUpdate
 from app.schemas.book_schema import Book, BookCreate, BookUpdate
 from app.schemas.pagination import PaginatedResponse
+from app.schemas.store_schema import Store, StoreCreate, StoreUpdate
 
 T = TypeVar("T")
 D = TypeVar("D")
@@ -148,3 +151,29 @@ class PaginationMapper:
                 previous_page=domain_result.meta.previous_page,
             ),
         )
+
+
+class StoreMapper:
+    """Mapper for store-related conversions."""
+
+    @staticmethod
+    def to_domain_create(schema: StoreCreate) -> StoreCreateData:
+        return StoreCreateData(name=schema.name, location=schema.location)
+
+    @staticmethod
+    def to_domain_update(schema: StoreUpdate) -> StoreUpdateData:
+        return StoreUpdateData(name=schema.name, location=schema.location)
+
+    @staticmethod
+    def to_api(entity: StoreEntity) -> Store:
+        return Store(
+            id=entity.id,  # type: ignore
+            name=entity.name,
+            location=entity.location,
+            created_at=entity.created_at,
+            updated_at=entity.updated_at,
+        )
+
+    @staticmethod
+    def entities_to_dtos(entities: list[StoreEntity]) -> list[Store]:
+        return [StoreMapper.to_api(entity) for entity in entities]
